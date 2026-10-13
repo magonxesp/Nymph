@@ -1,7 +1,8 @@
 import { Bot } from "grammy"
-import { agent } from "./llm.js"
+import { agent } from "./llm/agents.js"
+import { getAnswer, getContentTypes } from "./llm/response.js"
 import { log } from "./logging.js"
-import { PinoLangChainHandler } from "./langchain-logging.js"
+import { PinoLangChainHandler } from "./llm/logging.js"
 
 const token = process.env.NYMPH_TELEGRAM_TOKEN
 
@@ -25,21 +26,20 @@ bot.on("message:text", async (ctx) => {
         const result = await agent.invoke({ messages }, { callbacks: [new PinoLangChainHandler(chatId)] })
         const last = result.messages.at(-1)
         const content = last?.content
-        const answer = typeof content === "string"
-            ? content
-            : Array.isArray(content)
-                ? content.flatMap((block) => typeof block === "object" && block !== null && "text" in block && typeof block.text === "string" ? [block.text] : []).join("")
-                : ""
+        const answer = getAnswer(content)
+
         if (!answer.trim()) {
             log.warn({
                 chatId,
                 messageType: last?._getType(),
-                contentTypes: Array.isArray(content) ? content.map((block) => typeof block === "object" && block !== null && "type" in block ? block.type : typeof block) : typeof content,
+                contentTypes: getContentTypes(content),
                 responseMetadata: last?.response_metadata,
                 usageMetadata: last && "usage_metadata" in last ? last.usage_metadata : undefined,
             }, "Model returned no text")
+
             throw new Error("The model returned an empty answer")
         }
+
         await ctx.reply(answer)
         history.set(chatId, [...messages, { role: "assistant" as const, content: answer }].slice(-20))
     } catch (error) {

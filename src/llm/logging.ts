@@ -1,5 +1,5 @@
 import { BaseCallbackHandler } from "@langchain/core/callbacks/base"
-import { log } from "./logging.js"
+import { log } from "../logging.js"
 
 // Do not log prompts, tool arguments or model output: Telegram messages can contain private data.
 export class PinoLangChainHandler extends BaseCallbackHandler {

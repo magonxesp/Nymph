@@ -5,7 +5,7 @@ import { ChatOpenAI } from "@langchain/openai"
 import { createAgent, tool } from "langchain"
 import { z } from "zod"
 
-const root = fileURLToPath(new URL("..", import.meta.url))
+const root = fileURLToPath(new URL("../..", import.meta.url))
 const references = path.join(root, "context", "character")
 const skillsDirectory = path.join(root, "skills")
 
