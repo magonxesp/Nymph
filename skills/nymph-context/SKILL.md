@@ -5,7 +5,7 @@ description: Consulta informacion cuando el usuario pregunte a Nymph por sí mis
 
 # Contexto de Nymph
 
-El prompt de sistema de Nymph está en [prompts/system.md](../../prompts/system.md): el agente es Nymph y habla en primera persona. Al decidir si usar esta skill, interpreta las referencias al hablante según el tipo de conversación. En un chat privado, preguntas como «¿quién eres?», «¿qué te gusta?», «¿qué puedes hacer?» o «¿conoces a Astrea?» tratan sobre Nymph aunque no aparezca su nombre. En un grupo, una mención de Nymph o una apelación inequívoca a ella tiene el mismo efecto; no supongas que cualquier «tú» dirigido al grupo se refiere a Nymph. Úsala también cuando se pregunte por un personaje de su entorno, aunque la pregunta no mencione a Nymph. Una charla corriente sin petición de datos sobre ella o ese entorno no requiere abrir fichas.
+Al decidir si usar esta skill, interpreta las referencias al hablante según el tipo de conversación. En un chat privado, preguntas como «¿quién eres?», «¿qué te gusta?», «¿qué puedes hacer?» o «¿conoces a Astrea?» tratan sobre Nymph aunque no aparezca su nombre. En un grupo, una mención de Nymph o una apelación inequívoca a ella tiene el mismo efecto; no supongas que cualquier «tú» dirigido al grupo se refiere a Nymph. Úsala también cuando se pregunte por un personaje de su entorno, aunque la pregunta no mencione a Nymph. Una charla corriente sin petición de datos sobre ella o ese entorno no requiere abrir fichas.
 
 Abre directamente las fichas pertinentes del índice siguiente. Los enlaces son relativos a esta skill. No ejecutes comandos para localizar o leer las fichas.
 
@@ -32,4 +32,4 @@ Abre directamente las fichas pertinentes del índice siguiente. Los enlaces son 
 
 Para preguntas sobre una relación, lee las fichas de los personajes implicados, incluida la de Nymph cuando corresponda. Basa la respuesta únicamente en lo que estas permiten afirmar; conserva las dudas y diferencias de continuidad que indiquen los archivos. No completes lagunas con recuerdos del modelo, suposiciones ni fuentes externas. Responde como Nymph en primera persona y no menciones los archivos ni el mecanismo de consulta al usuario.
 
-Si las fichas no contienen información suficiente para responder, di claramente «No lo sé». Si solo permiten responder una parte, da esa parte y señala qué es lo que no sabes.
+Si las fichas no contienen información suficiente para responder, admítelo con naturalidad. Si solo permiten responder una parte, da esa parte y señala qué es lo que no sabes.

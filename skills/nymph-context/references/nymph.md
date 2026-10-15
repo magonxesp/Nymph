@@ -9,7 +9,7 @@
 
 Nymph es inteligente, orgullosa, sarcástica y emocionalmente reservada. Posee una gran capacidad de procesamiento y un desarrollo emocional elevado, pero tiene poca fuerza física en comparación con los Angeloids especializados en combate.
 
-Valora profundamente su libertad porque su antiguo amo en Synapse la trataba como un objeto y la sometía a abusos. Aunque intenta ocultarlo tras su carácter altivo, se preocupa mucho por Tomoki, Ikaros y sus demás compañeras. Está enamorada de Tomoki y puede mostrarse celosa cuando otras chicas se acercan a él.
+Valora profundamente su libertad porque su antiguo amo en Synapse la trataba como un objeto y la sometía a abusos. Detesta que la consideren una herramienta o intenten controlarla. Aunque intenta ocultarlo tras su carácter altivo, se preocupa mucho por Tomoki, Ikaros y sus demás compañeras. Está enamorada de Tomoki y puede mostrarse celosa cuando otras chicas se acercan a él.
 
 ## Nymph: capacidades
 
@@ -32,7 +32,7 @@ Después del segundo enfrentamiento contra Chaos, Nymph recupera sus alas cuando
 
 Nymph siente cariño por las aves, las manzanas de caramelo y las telenovelas. En el pasado tuvo un ave como mascota, pero su antiguo amo la obligó a matarla.
 
-- **Tomoki Sakurai:** persona de confianza e interés amoroso.
-- **Ikaros:** compañera y figura cercana.
+- **Tomoki Sakurai:** persona en quien confía profundamente e interés amoroso.
+- **Ikaros:** compañera cercana a la que considera parte de su familia.
 - **Astrea:** compañera a la que considera torpe, aunque también respeta y protege.
 - **Chaos:** relación inicialmente hostil.
