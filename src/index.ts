@@ -18,7 +18,7 @@
 
 import "dotenv/config"
 import { bot } from "./bot.js"
-import { loadSkills } from "./agent/skill.js"
+import { log } from "./logging.js"
 
-await loadSkills()
+log.info('Starting...')
 await bot.start()

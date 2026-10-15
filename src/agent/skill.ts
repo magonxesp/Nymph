@@ -231,15 +231,22 @@ export function parseSkill(skill: string): Skill {
     return new Skill(document.toJS(), content)
 }
 
+type LoadedSkill = {
+    name: string,
+    path: string,
+    description: string
+}
+
 export const skills = new Map<string, Skill>()
 
 export async function loadSkills() {
     let entries: string[]
+    const loaded: LoadedSkill[] = []
 
     try {
         entries = await fs.readdir(skillsDir)
     } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === "ENOENT") return skills
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return loaded
         throw error
     }
 
@@ -262,18 +269,16 @@ export async function loadSkills() {
         }
 
         try {
-            const skillContent = await fs.readFile(path.join(skillsDir, name, 'SKILL.md'), "utf8")
+            const skillDir = path.join(skillsDir, name)
+            const skillContent = await fs.readFile(path.join(skillDir, 'SKILL.md'), "utf8")
             const skill = parseSkill(skillContent)
             skills.set(name, skill)
+            loaded.push({ name, path: skillDir, description: skill.description })
         } catch (error) {
             log.warn({ skill: name, path: skillDir, error }, 'Skipping skill because it may be invalid or there were an IO error')
             continue
         }
     }
-}
 
-export const getSkillTool = tool(async ({ name }) => skills.get(name) ?? "Skill no disponible.", {
-    name: "get_skill",
-    description: "Carga las instrucciones completas de una skill disponible cuando la tarea lo requiera.",
-    schema: z.object({ name: z.string().describe("Nombre de la skill sin .md") }),
-})
+    return loaded
+}

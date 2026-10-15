@@ -15,3 +15,43 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
+import { tool } from "langchain";
+import { skills } from "./skill.js";
+import z from "zod";
+import fs from "node:fs/promises"
+
+export const readTextFile = tool(
+    async ({ path }) => await fs.readFile(path),
+    {
+        name: "read_text_file",
+        description: "Lee un fichero de texto",
+        schema: z.object({ path: z.string().describe("Path al fichero") }),
+    }
+)
+
+export const getSkill = tool(
+    async ({ name }) => skills.get(name) ?? "Skill no disponible.",
+    {
+        name: "get_skill",
+        description: "Carga las instrucciones completas de una skill disponible cuando la peticion del usuario lo requiera.",
+        schema: z.object({ name: z.string().describe("Nombre de la skill") }),
+    }
+)
+/*
+const getContext = tool(async ({ reference }) => {
+    const filename = allowedReferences.get(reference)
+    if (!filename) return "Referencia no disponible. Consulta el índice para elegir una ruta exacta."
+    return readFile(path.join(references, filename), "utf8")
+}, {
+    name: "get_context",
+    description: "Lee una referencia de personaje por su ruta exacta indicada en el índice de contexto.",
+    schema: z.object({ reference: z.string().describe("Ruta exacta, por ejemplo context/character/nymph.md") }),
+})
+*/
+const tools = [
+    getSkill,
+    readTextFile
+]
+
+export default tools
