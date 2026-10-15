@@ -1,7 +1,6 @@
 import "dotenv/config"
 import { bot } from "./bot.js"
+import { loadSkills } from "./agent/skill.js"
 
-bot.start().catch((error: unknown) => {
-    console.error("Failed to start Telegram bot:", error)
-    process.exitCode = 1
-})
+await loadSkills()
+await bot.start()

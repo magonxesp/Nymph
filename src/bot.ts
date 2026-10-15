@@ -1,8 +1,8 @@
 import { Bot } from "grammy"
-import { agent } from "./llm/agents.js"
-import { getAnswer, getContentTypes } from "./llm/response.js"
+import { agent } from "./agent/agent.js"
+import { getAnswer, getContentTypes } from "./agent/response.js"
 import { log } from "./logging.js"
-import { PinoLangChainHandler } from "./llm/logging.js"
+import { PinoLangChainHandler } from "./agent/logging.js"
 
 const token = process.env.NYMPH_TELEGRAM_TOKEN
 

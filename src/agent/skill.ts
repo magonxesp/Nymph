@@ -1,4 +1,10 @@
 import { parseDocument } from 'yaml'
+import { tool } from 'langchain'
+import z from 'zod'
+import fs from 'node:fs/promises'
+import { skillsDir } from '../env.js'
+import path from 'node:path'
+import { log } from '../logging.js'
 
 class SkillName {
     private constructor(public readonly value: string) {
@@ -206,3 +212,50 @@ export function parseSkill(skill: string): Skill {
 
     return new Skill(document.toJS(), content)
 }
+
+export const skills = new Map<string, Skill>()
+
+export async function loadSkills() {
+    let entries: string[]
+
+    try {
+        entries = await fs.readdir(skillsDir)
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return skills
+        throw error
+    }
+
+    for (const name of entries) {
+        const skillDir = path.join(skillsDir, name)
+        const stat = await fs.stat(skillDir)
+
+        if (!stat.isDirectory()) {
+            log.warn({ skill: name, path: skillDir }, 'Skipping skill because it is not a directory')
+            continue
+        }
+
+        const skillFile = path.join(skillDir, 'SKILL.md')
+
+        try {
+            await fs.access(skillFile)
+        } catch (error) {
+            log.warn({ skill: name, path: skillDir, error }, 'Skipping skill because it SKILL.md does not exists')
+            continue
+        }
+
+        try {
+            const skillContent = await fs.readFile(path.join(skillsDir, name, 'SKILL.md'), "utf8")
+            const skill = parseSkill(skillContent)
+            skills.set(name, skill)
+        } catch (error) {
+            log.warn({ skill: name, path: skillDir, error }, 'Skipping skill because it may be invalid or there were an IO error')
+            continue
+        }
+    }
+}
+
+export const getSkillTool = tool(async ({ name }) => skills.get(name) ?? "Skill no disponible.", {
+    name: "get_skill",
+    description: "Carga las instrucciones completas de una skill disponible cuando la tarea lo requiera.",
+    schema: z.object({ name: z.string().describe("Nombre de la skill sin .md") }),
+})
