@@ -10,8 +10,8 @@
     "build": "tsc"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "MagonxESP",
+  "license": "AGPL-3.0-or-later",
   "devDependencies": {
     "@types/node": "^25.9.1",
     "tsx": "^4.22.4",
