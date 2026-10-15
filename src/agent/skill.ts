@@ -17,8 +17,6 @@
  */
 
 import { parseDocument } from 'yaml'
-import { tool } from 'langchain'
-import z from 'zod'
 import fs from 'node:fs/promises'
 import { skillsDir } from '../env.js'
 import path from 'node:path'

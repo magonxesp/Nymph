@@ -18,9 +18,8 @@
 
 import { readFile } from "node:fs/promises"
 import path from "node:path"
-import { fileURLToPath } from "node:url"
 import { ChatOpenAI } from "@langchain/openai"
-import { createAgent, tool } from "langchain"
+import { createAgent } from "langchain"
 import { aiModel, openAIApiKey, promptsDir } from "../env.js"
 import { loadSkills, skills } from "./skill.js"
 import tools from "./tool.js"
