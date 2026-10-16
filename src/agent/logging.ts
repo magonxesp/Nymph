@@ -36,11 +36,11 @@ export class PinoLangChainHandler extends BaseCallbackHandler {
     }
 
     handleLLMError(err: Error, runId: string): void {
-        log.error({ err, chatId: this.chatId, runId }, "LangChain model failed")
+        log.error({ error: err, chatId: this.chatId, runId }, "LangChain model failed")
     }
 
-    handleToolStart(_tool: unknown, _input: string, runId: string, _parentRunId?: string, _tags?: string[], _metadata?: Record<string, unknown>, runName?: string): void {
-        log.debug({ chatId: this.chatId, runId, tool: runName }, "LangChain tool started")
+    handleToolStart(_tool: unknown, input: string, runId: string, _parentRunId?: string, _tags?: string[], _metadata?: Record<string, unknown>, runName?: string): void {
+        log.debug({ chatId: this.chatId, runId, tool: runName, input }, "LangChain tool started")
     }
 
     handleToolEnd(_output: unknown, runId: string): void {
@@ -48,10 +48,10 @@ export class PinoLangChainHandler extends BaseCallbackHandler {
     }
 
     handleToolError(err: Error, runId: string): void {
-        log.error({ err, chatId: this.chatId, runId }, "LangChain tool failed")
+        log.error({ error: err, chatId: this.chatId, runId }, "LangChain tool failed")
     }
 
     handleChainError(err: Error, runId: string): void {
-        log.error({ err, chatId: this.chatId, runId }, "LangChain chain failed")
+        log.error({ error: err, chatId: this.chatId, runId }, "LangChain chain failed")
     }
 }
