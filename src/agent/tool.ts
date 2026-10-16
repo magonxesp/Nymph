@@ -20,6 +20,9 @@ import { tool } from "langchain";
 import { skills } from "./skill.js";
 import z from "zod";
 import fs from "node:fs/promises"
+import { Rule34Client } from "../booru.js"
+
+const rule34Client = new Rule34Client()
 
 export const readTextFile = tool(
     async ({ path }) => await fs.readFile(path),
@@ -38,20 +41,38 @@ export const getSkill = tool(
         schema: z.object({ name: z.string().describe("Nombre de la skill") }),
     }
 )
-/*
-const getContext = tool(async ({ reference }) => {
-    const filename = allowedReferences.get(reference)
-    if (!filename) return "Referencia no disponible. Consulta el índice para elegir una ruta exacta."
-    return readFile(path.join(references, filename), "utf8")
-}, {
-    name: "get_context",
-    description: "Lee una referencia de personaje por su ruta exacta indicada en el índice de contexto.",
-    schema: z.object({ reference: z.string().describe("Ruta exacta, por ejemplo context/character/nymph.md") }),
-})
-*/
+
+export const rule34AutocompleteTags = tool(
+    async ({ tag }) => await rule34Client.autocompleteTags(tag),
+    {
+        name: "rule34_autocomplete_tags",
+        description: "Busca sugerencias para un tag de Rule34. Usa el campo value de una sugerencia para buscar posts.",
+        schema: z.object({ tag: z.string().min(1).describe("Tag incompleto que se quiere autocompletar") }),
+    }
+)
+
+export const rule34RandomPost = tool(
+    async ({ tag }) => {
+        const post = await rule34Client.getRandomPost(tag)
+
+        if (!post) {
+            return `No se encontraron posts para el tag ${tag}.`
+        }
+
+        return post.file_url
+    },
+    {
+        name: "rule34_random_post",
+        description: "Devuelve la URL del archivo de un post aleatorio de Rule34 que tenga el tag indicado.",
+        schema: z.object({ tag: z.string().min(1).describe("Tag de Rule34 usado para buscar el post") }),
+    }
+)
+
 const tools = [
     getSkill,
-    readTextFile
+    readTextFile,
+    rule34AutocompleteTags,
+    rule34RandomPost
 ]
 
 export default tools

@@ -29,5 +29,13 @@ describe('Rule34 API integration', () => {
             expect(typeof posts.items[0].score).toBe('number')
             expect(typeof posts.items[0].has_children).toBe('boolean')
         })
+
+        it('retrieves a random post from real search results', async () => {
+            const post = await client.getRandomPost('nymph')
+
+            expect(post).toBeDefined()
+            expect(post?.id).toEqual(expect.any(Number))
+            expect(post?.file_url).toMatch(/^https?:\/\//)
+        })
     })
 })

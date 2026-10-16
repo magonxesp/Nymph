@@ -20,6 +20,7 @@ import { XMLParser } from 'fast-xml-parser'
 import { SyntaxValidator } from 'fast-xml-validator'
 import { rule34ApiKey, rule34UserId } from "./env.js";
 
+const pageSize = 100
 const xmlParser = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: '',
@@ -107,7 +108,7 @@ export class Client {
     }
 
     public async getPosts(tags: string | string[], options: GetPostsOptions = {}): Promise<Posts> {
-        const { limit = 100, page = 0, id, changeId } = options
+        const { limit = pageSize, page = 0, id, changeId } = options
         const url = new URL('index.php', this.baseUrl)
         url.searchParams.set('page', 'dapi')
         url.searchParams.set('s', 'post')
@@ -136,6 +137,22 @@ export class Client {
         }
 
         return this.parsePosts(await response.text())
+    }
+
+    public async getRandomPost(tags: string | string[]): Promise<Post | undefined> {
+        const firstPage = await this.getPosts(tags, { limit: pageSize })
+
+        if (firstPage.count === 0 || firstPage.items.length === 0) {
+            return undefined
+        }
+
+        const randomIndex = Math.floor(Math.random() * firstPage.count)
+        const page = Math.floor(randomIndex / pageSize)
+        const posts = page === 0
+            ? firstPage
+            : await this.getPosts(tags, { limit: pageSize, page })
+
+        return posts.items[randomIndex % pageSize]
     }
 
     public async autocompleteTags(query: string): Promise<Tag[]> {
