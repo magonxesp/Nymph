@@ -83,9 +83,9 @@ describe('Single Chat History', () => {
 
 describe('getChatHistory', () => {
     it('reuses the history for a chat and creates a separate history for another chat', () => {
-        const firstHistory = getPrivateChatHistory('first-chat', summarizerMock)
-        const sameHistory = getPrivateChatHistory('first-chat', summarizerMock)
-        const otherHistory = getPrivateChatHistory('other-chat', summarizerMock)
+        const firstHistory = getPrivateChatHistory('first-chat')
+        const sameHistory = getPrivateChatHistory('first-chat')
+        const otherHistory = getPrivateChatHistory('other-chat')
 
         expect(sameHistory).toBe(firstHistory)
         expect(otherHistory).not.toBe(firstHistory)

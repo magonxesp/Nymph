@@ -1,0 +1,3 @@
+# Un patrón glob por línea. * coincide con cualquier texto y ? con un carácter.
+# Los patrones se aplican al mensaje completo sin distinguir mayúsculas.
+*nymph*
