@@ -1,0 +1,9 @@
+.git
+.idea
+.env*
+.DS_Store
+AGENTS.md
+dist
+node_modules
+*.log
+.vitest

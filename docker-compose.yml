@@ -1,0 +1,5 @@
+services:
+  nymph:
+    build: .
+    env_file:
+      - .env
