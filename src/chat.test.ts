@@ -17,7 +17,7 @@
  */
 
 import {describe, expect, it, vi} from "vitest";
-import {ChatHistory, ChatMessage, ChatSummarizer} from "./chat.js";
+import {SingleChatHistory, ChatMessage, ChatSummarizer} from "./chat.js";
 
 const messageMother = (): ChatMessage => ({
     role: "user",
@@ -28,15 +28,15 @@ const summarizerMock: ChatSummarizer = {
     summarize: vi.fn()
 }
 
-describe('Chat History', () => {
+describe('Single Chat History', () => {
     it('compact all chat history when it reach the message count limit', async () => {
         vi.mocked(summarizerMock.summarize).mockResolvedValue(({
             role: 'assistant',
             content: 'Messages summary'
         }))
 
-        const messages = Array(ChatHistory.messageCountLimit).fill(messageMother())
-        const history = new ChatHistory('example-chat-id', messages, summarizerMock);
+        const messages = Array(SingleChatHistory.messageCountLimit).fill(messageMother())
+        const history = new SingleChatHistory('example-chat-id', messages, summarizerMock);
 
         expect(history.messagesCount).toBe(messages.length)
 
@@ -53,8 +53,8 @@ describe('Chat History', () => {
             resolveSummary = resolve
         }))
 
-        const messages = Array(ChatHistory.messageCountLimit).fill(messageMother())
-        const history = new ChatHistory('example-chat-id', messages, summarizerMock);
+        const messages = Array(SingleChatHistory.messageCountLimit).fill(messageMother())
+        const history = new SingleChatHistory('example-chat-id', messages, summarizerMock);
 
         expect(history.messagesCount).toBe(messages.length)
 
@@ -66,7 +66,7 @@ describe('Chat History', () => {
         }
 
         expect(summarizerMock.summarize).toHaveBeenCalledWith(expect.any(Array))
-        expect(vi.mocked(summarizerMock.summarize).mock.lastCall?.[0]).toHaveLength(ChatHistory.messageCountLimit + 1)
+        expect(vi.mocked(summarizerMock.summarize).mock.lastCall?.[0]).toHaveLength(SingleChatHistory.messageCountLimit + 1)
 
         resolveSummary({
             role: 'assistant',

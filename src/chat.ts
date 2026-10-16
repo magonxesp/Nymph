@@ -26,7 +26,7 @@ export type ChatMessage = {
     content: string;
 }
 
-export class ChatHistory {
+export class SingleChatHistory {
     private summarizer: ChatSummarizer
     private readonly messages: ChatMessage[] = []
     private isCompacting: boolean = false
@@ -43,7 +43,7 @@ export class ChatHistory {
     public addMessage(message: ChatMessage) {
         this.messages.push(message);
 
-        if (!this.isCompacting && this.messagesCount > ChatHistory.messageCountLimit) {
+        if (!this.isCompacting && this.messagesCount > SingleChatHistory.messageCountLimit) {
             this.isCompacting = true
             const messagesToCompact = this.messages.slice()
 
