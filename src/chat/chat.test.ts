@@ -17,7 +17,8 @@
  */
 
 import {describe, expect, it, vi} from "vitest";
-import {SingleChatHistory, ChatMessage, ChatSummarizer} from "./chat.js";
+import {PrivateChatHistory, ChatMessage, getPrivateChatHistory} from "./chat.js";
+import {ChatSummarizer} from "./summarizer.js";
 
 const messageMother = (): ChatMessage => ({
     role: "user",
@@ -35,8 +36,8 @@ describe('Single Chat History', () => {
             content: 'Messages summary'
         }))
 
-        const messages = Array(SingleChatHistory.messageCountLimit).fill(messageMother())
-        const history = new SingleChatHistory('example-chat-id', messages, summarizerMock);
+        const messages = Array(PrivateChatHistory.messageCountLimit).fill(messageMother())
+        const history = new PrivateChatHistory('example-chat-id', messages, summarizerMock);
 
         expect(history.messagesCount).toBe(messages.length)
 
@@ -53,8 +54,8 @@ describe('Single Chat History', () => {
             resolveSummary = resolve
         }))
 
-        const messages = Array(SingleChatHistory.messageCountLimit).fill(messageMother())
-        const history = new SingleChatHistory('example-chat-id', messages, summarizerMock);
+        const messages = Array(PrivateChatHistory.messageCountLimit).fill(messageMother())
+        const history = new PrivateChatHistory('example-chat-id', messages, summarizerMock);
 
         expect(history.messagesCount).toBe(messages.length)
 
@@ -66,7 +67,7 @@ describe('Single Chat History', () => {
         }
 
         expect(summarizerMock.summarize).toHaveBeenCalledWith(expect.any(Array))
-        expect(vi.mocked(summarizerMock.summarize).mock.lastCall?.[0]).toHaveLength(SingleChatHistory.messageCountLimit + 1)
+        expect(vi.mocked(summarizerMock.summarize).mock.lastCall?.[0]).toHaveLength(PrivateChatHistory.messageCountLimit + 1)
 
         resolveSummary({
             role: 'assistant',
@@ -77,5 +78,18 @@ describe('Single Chat History', () => {
         await vi.waitFor(() => {
             expect(history.messagesCount).toBe(expectedMessageCount)
         })
+    })
+})
+
+describe('getChatHistory', () => {
+    it('reuses the history for a chat and creates a separate history for another chat', () => {
+        const firstHistory = getPrivateChatHistory('first-chat', summarizerMock)
+        const sameHistory = getPrivateChatHistory('first-chat', summarizerMock)
+        const otherHistory = getPrivateChatHistory('other-chat', summarizerMock)
+
+        expect(sameHistory).toBe(firstHistory)
+        expect(otherHistory).not.toBe(firstHistory)
+        expect(firstHistory.messagesCount).toBe(0)
+        expect(otherHistory.messagesCount).toBe(0)
     })
 })

@@ -21,6 +21,8 @@ import { agent } from "./agent/agent.js"
 import { getAnswer, getContentTypes } from "./agent/response.js"
 import { log } from "./logging.js"
 import { PinoLangChainHandler } from "./agent/logging.js"
+import {getPrivateChatHistory} from "./chat/chat.js";
+import {toModelMessage} from "./chat/message.js";
 
 const token = process.env.NYMPH_TELEGRAM_TOKEN
 
@@ -29,7 +31,6 @@ if (!token) {
 }
 
 export const bot = new Bot(token)
-const history = new Map<number, Array<{ role: "user" | "assistant", content: string }>>()
 
 bot.command("start", async (ctx) => {
     await ctx.reply("Hola 😊")
@@ -37,10 +38,14 @@ bot.command("start", async (ctx) => {
 
 bot.on("message:text", async (ctx) => {
     const chatId = ctx.chat.id
-    const previous = history.get(chatId) ?? []
+    const user = ctx.chat.username
+    const isGroup = ctx.chat.type === "group" || ctx.chat.type === "supergroup"
+
+    const history = getPrivateChatHistory(`telegram:${chatId}`)
 
     try {
-        const messages = [...previous, { role: "user" as const, content: ctx.message.text }]
+        history.addUserMessage(ctx.message.text)
+        const messages = history.messages.map(toModelMessage)
         const result = await agent.invoke({ messages }, { callbacks: [new PinoLangChainHandler(chatId)] })
         const last = result.messages.at(-1)
         const content = last?.content
@@ -49,7 +54,7 @@ bot.on("message:text", async (ctx) => {
         if (!answer.trim()) {
             log.warn({
                 chatId,
-                messageType: last?._getType(),
+                messageType: last?.type,
                 contentTypes: getContentTypes(content),
                 responseMetadata: last?.response_metadata,
                 usageMetadata: last && "usage_metadata" in last ? last.usage_metadata : undefined,
@@ -59,7 +64,7 @@ bot.on("message:text", async (ctx) => {
         }
 
         await ctx.reply(answer)
-        history.set(chatId, [...messages, { role: "assistant" as const, content: answer }].slice(-20))
+        history.addAssistantMessage(answer)
     } catch (error) {
         log.error({ err: error, chatId }, "Failed to answer Telegram message")
         await ctx.reply("No he podido responder ahora. Inténtalo de nuevo en un momento.")
