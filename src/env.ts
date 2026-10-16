@@ -25,3 +25,5 @@ export const promptsDir = process.env.NYMPH_PROMPTS_DIR ?? path.join(rootDir, 'p
 export const openAIApiKey = process.env.NYMPH_OPENAI_API_KEY
 export const aiModel = process.env.NYMPH_AI_MODEL ?? "gpt-6-luna"
 export const summaryModel = process.env.NYMPH_SUMMARY_MODEL ?? "gpt-6-luna"
+export const rule34ApiKey = process.env.NYMPH_RULE34_API_KEY
+export const rule34UserId = process.env.NYMPH_RULE34_USER_ID

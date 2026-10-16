@@ -22,6 +22,8 @@
     "@langchain/core": "^1.2.17",
     "@langchain/openai": "^1.6.2",
     "dotenv": "17.4.2",
+    "fast-xml-parser": "^5.11.2",
+    "fast-xml-validator": "^1.4.2",
     "grammy": "^1.46.0",
     "handlebars": "4.7.9",
     "langchain": "^1.5.16",
