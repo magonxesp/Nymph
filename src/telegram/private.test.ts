@@ -26,6 +26,10 @@ import { getPrivateChatHistory } from "../chat/chat.js"
 
 const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }))
 
+vi.mock("../media/image.js", () => ({
+    resizeImage: async (bytes: Buffer) => bytes
+}))
+
 vi.mock("../agent/agent.js", () => ({
     createPrivateChatAgent: async () => ({ invoke: invokeMock }),
     createGroupChatAgent: async () => ({ invoke: invokeMock })

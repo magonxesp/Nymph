@@ -18,8 +18,13 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest"
 import type { Message } from "grammy/types"
+import { resizeImage } from "../media/image.js"
 import { getAnimationFrames } from "../media/animation.js"
 import { getTelegramAttachments, maxAttachmentBytes } from "./attachment.js"
+
+vi.mock("../media/image.js", () => ({
+    resizeImage: vi.fn(async (bytes: Buffer) => bytes)
+}))
 
 vi.mock("../media/animation.js", () => ({
     getAnimationFrames: vi.fn().mockResolvedValue(["data:image/png;base64,frame"])
@@ -77,6 +82,16 @@ describe("getTelegramAttachments", () => {
         }, createApi())
 
         expect(images).toEqual({ images: ["data:image/png;base64,AQID"], files: [] })
+    })
+
+    it("encodes the resized bytes instead of the original image", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(new Uint8Array([1, 2, 3]))))
+        vi.mocked(resizeImage).mockResolvedValueOnce(Buffer.from([4, 5, 6]))
+
+        const attachments = await getTelegramAttachments(photoMessage, createApi())
+
+        expect(resizeImage).toHaveBeenCalledWith(Buffer.from([1, 2, 3]), "image/jpeg")
+        expect(attachments).toEqual({ images: ["data:image/jpeg;base64,BAUG"], files: [] })
     })
 
     it.each([

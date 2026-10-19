@@ -19,6 +19,7 @@
 import type { Api } from "grammy"
 import type { Message } from "grammy/types"
 import { supportedImageMimeTypes, supportedFileMimeTypes } from "../agent/mime-types.js"
+import { resizeImage } from "../media/image.js"
 import { getAnimationFrames } from "../media/animation.js"
 import type { ChatAttachments } from "../chat/attachment.js"
 
@@ -149,6 +150,7 @@ export async function getTelegramAttachments(message: Message, api: Pick<Api, "g
     }
 
     const filename = attachment.file_name ?? file.file_path.split("/").at(-1) ?? "attachment"
+
     if (mimeType === "image/gif" || isMp4Animation) {
         const signature = bytes.subarray(0, 6).toString("ascii")
         const isGif = signature === "GIF87a" || signature === "GIF89a"
@@ -156,11 +158,13 @@ export async function getTelegramAttachments(message: Message, api: Pick<Api, "g
         return { images: await getAnimationFrames(bytes, format), files: [] }
     }
 
-    const data = bytes.toString("base64")
-
     if (isSupportedImage) {
+        const resizedImage = await resizeImage(bytes, mimeType)
+        const data = resizedImage.toString("base64")
         return { images: [`data:${mimeType};base64,${data}`], files: [] }
     }
+
+    const data = bytes.toString("base64")
 
     return {
         images: [],
