@@ -35,3 +35,27 @@ describe("toModelMessage", () => {
         expect(message.content).toBe("Hola")
     })
 })
+
+it("sends the caption and image together as multimodal content", () => {
+    const image = "data:image/png;base64,AQID"
+    const message = toModelMessage({ role: "user", content: "¿Qué ves?", images: [image] })
+
+    expect(message).toBeInstanceOf(HumanMessage)
+    expect(message.content).toEqual([
+        { type: "text", text: "¿Qué ves?" },
+        { type: "image_url", image_url: { url: image } }
+    ])
+})
+
+it("sends arbitrary files with their names and MIME types", () => {
+    const message = toModelMessage({
+        role: "user",
+        content: "Revisa el adjunto",
+        files: [{ filename: "report.pdf", mimeType: "application/pdf", data: "AQID" }]
+    })
+
+    expect(message.content).toEqual([
+        { type: "text", text: "Revisa el adjunto" },
+        { type: "input_file", filename: "report.pdf", file_data: "data:application/pdf;base64,AQID" }
+    ])
+})

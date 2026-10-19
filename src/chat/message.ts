@@ -17,12 +17,31 @@
  */
 
 import { AIMessage, HumanMessage } from "@langchain/core/messages"
+import type { ChatFile } from "./attachment.js"
 import type { ChatMessage } from "./chat.js"
 
 export function toModelMessage(message: ChatMessage): AIMessage | HumanMessage {
     if (message.role === "user") {
-        return new HumanMessage(message.content)
+        return toHumanMessage(message.content, message.images, message.files)
     }
 
     return new AIMessage(message.content)
+}
+
+export function toHumanMessage(text: string, images: string[] = [], files: ChatFile[] = []): HumanMessage {
+    if (images.length === 0 && files.length === 0) {
+        return new HumanMessage(text)
+    }
+
+    return new HumanMessage({
+        content: [
+            { type: "text", text },
+            ...images.map(url => ({ type: "image_url" as const, image_url: { url } })),
+            ...files.map(file => ({
+                type: "input_file" as const,
+                filename: file.filename,
+                file_data: `data:${file.mimeType};base64,${file.data}`
+            }))
+        ]
+    })
 }

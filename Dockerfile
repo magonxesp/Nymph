@@ -17,6 +17,10 @@ ENV NODE_ENV=production \
     NYMPH_SKILLS_DIR=/app/skills \
     NYMPH_PROMPTS_DIR=/app/prompts
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY --from=build /app/node_modules ./node_modules

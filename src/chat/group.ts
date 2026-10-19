@@ -18,6 +18,8 @@
 
 import { AIMessage, HumanMessage } from "@langchain/core/messages"
 import { z } from "zod"
+import type { ChatFile } from "./attachment.js"
+import { toHumanMessage } from "./message.js"
 
 export type GroupMention = {
     text: string
@@ -30,6 +32,8 @@ export type GroupMessage = {
     senderId: string
     senderName: string
     text: string
+    images?: string[]
+    files?: ChatFile[]
     timestamp: number
     replyToMessageId?: number
     mentions?: GroupMention[]
@@ -83,7 +87,7 @@ export class GroupChatHistory {
                 return new AIMessage(content)
             }
 
-            return new HumanMessage(content)
+            return toHumanMessage(content, message.images, message.files)
         })
     }
 }

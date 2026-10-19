@@ -15,12 +15,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+import type { ChatFile } from "./attachment.js"
 import { log } from '../logging.js'
 import { OpenAIChatSummarizer, ChatSummarizer } from './summarizer.js'
 
 export type ChatMessage = {
     role: 'assistant' | 'user'
     content: string;
+    images?: string[]
+    files?: ChatFile[]
 }
 
 export class PrivateChatHistory {
@@ -37,10 +40,12 @@ export class PrivateChatHistory {
         this.summarizer = summarizer
     }
 
-    public addUserMessage(content: string) {
+    public addUserMessage(content: string, images?: string[], files?: ChatFile[]) {
         this.addMessage({
             role: "user",
-            content
+            content,
+            ...(images?.length ? { images } : {}),
+            ...(files?.length ? { files } : {})
         })
     }
 

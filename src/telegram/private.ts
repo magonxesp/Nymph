@@ -23,20 +23,30 @@ import { log } from "../logging.js"
 import { PinoLangChainHandler } from "../agent/logging.js"
 import { getPrivateChatHistory } from "../chat/chat.js"
 import { toModelMessage } from "../chat/message.js"
+import { getTelegramAttachments } from "./attachment.js"
 
 const agent = await createPrivateChatAgent()
 
 export async function handlePrivateMessage(ctx: Filter<Context, "message">): Promise<void> {
     const chatId = ctx.chat.id
 
-    if (!ctx.message.text) {
-        return
-    }
-
+    const text = ctx.message.text ?? ctx.message.caption
     const history = getPrivateChatHistory(`telegram:${chatId}`)
 
     try {
-        history.addUserMessage(ctx.message.text)
+        const attachments = await getTelegramAttachments(ctx.message, ctx.api)
+
+        if (attachments === null) {
+            return
+        }
+
+        const { images, files } = attachments
+        if (!text && images.length === 0 && files.length === 0) {
+            return
+        }
+
+        const placeholder = images.length ? "[imagen sin texto]" : "[archivo sin texto]"
+        history.addUserMessage(text ?? placeholder, images, files)
         const messages = history.messages.map(toModelMessage)
         const result = await agent.invoke({ messages }, { callbacks: [new PinoLangChainHandler(chatId)] })
         const last = result.messages.at(-1)

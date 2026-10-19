@@ -103,3 +103,42 @@ describe("GroupChatHistory", () => {
         expect(getGroupChatHistory("group-a")).not.toBe(getGroupChatHistory("group-b"))
     })
 })
+
+it("keeps earlier group images available when a later message triggers a response", () => {
+    const history = new GroupChatHistory()
+    const image = "data:image/jpeg;base64,AQID"
+    history.addMessage({
+        id: 1, role: "user", senderId: "1", senderName: "Ana",
+        text: "Mira esto", images: [image], timestamp: 1
+    })
+    history.addMessage({
+        id: 2, role: "user", senderId: "2", senderName: "Luis",
+        text: "Nymph, ¿qué ves en la foto?", timestamp: 2
+    })
+
+    const [message] = history.toModelMessages(2)
+
+    expect(message.content).toEqual([
+        { type: "text", text: expect.stringContaining('"isTrigger": false') },
+        { type: "image_url", image_url: { url: image } }
+    ])
+    expect(message.content).toEqual(expect.arrayContaining([
+        { type: "text", text: expect.stringContaining('"name": "Ana"') }
+    ]))
+})
+
+it("keeps files attached to earlier group messages available to the model", () => {
+    const history = new GroupChatHistory()
+    history.addMessage({
+        id: 1, role: "user", senderId: "1", senderName: "Ana",
+        text: "Revisa esto", timestamp: 1,
+        files: [{ filename: "data.csv", mimeType: "text/csv", data: "AQID" }]
+    })
+
+    const [message] = history.toModelMessages(2)
+
+    expect(message.content).toEqual([
+        { type: "text", text: expect.stringContaining('"isTrigger": false') },
+        { type: "input_file", filename: "data.csv", file_data: "data:text/csv;base64,AQID" }
+    ])
+})

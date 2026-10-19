@@ -4,11 +4,15 @@ La misma pero ahora con inteligencia :D
 
 ![](./docs/nymph.webp)
 
+El bot acepta archivos adjuntos de cualquier tipo, con o sin pie de foto. Los GIF y las animaciones de Telegram (incluidas las convertidas a MP4) se convierten en hasta seis fotogramas PNG, tomando el primero y después como máximo uno por segundo. Las imágenes compatibles se envían como contenido visual y el resto como archivos con su nombre y tipo MIME; su interpretación depende de los formatos que admita el modelo. Los adjuntos de más de 10 MB (10 × 1024 × 1024 bytes) se descartan silenciosamente junto con su mensaje, también en grupos. El límite se comprueba antes de descargar y durante la descarga. En privado responde directamente; en grupos conserva los adjuntos en el historial y responde cuando se activa una mención o un patrón de los habituales. Los modelos configurados en `NYMPH_AI_MODEL` y `NYMPH_SUMMARY_MODEL` deben admitir los adjuntos enviados.
+
 ## Compilar y ejecutar
 
 Copia `.env.example` a `.env` y configura, como mínimo, `NYMPH_OPENAI_API_KEY` y `NYMPH_TELEGRAM_TOKEN`.
 
 ### Con npm
+
+Instala `ffmpeg` y asegúrate de que esté disponible en `PATH` para procesar GIF y animaciones. La imagen Docker ya lo incluye.
 
 ```sh
 cp .env.example .env

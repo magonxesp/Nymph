@@ -26,6 +26,7 @@ import { PinoLangChainHandler } from "../agent/logging.js"
 import { getGroupChatHistory } from "../chat/group.js"
 import { compileGroupTriggers, matchesGroupTrigger, mentionsBot } from "../chat/group-triggers.js"
 import { rootDir } from "../env.js"
+import { getTelegramAttachments } from "./attachment.js"
 
 const groupTriggers = compileGroupTriggers(await readFile(path.join(rootDir, "group-triggers.txt"), "utf8"))
 const agent = await createGroupChatAgent()
@@ -38,32 +39,42 @@ export async function handleGroupMessage(ctx: Filter<Context, "message">): Promi
     const messageText = ctx.message.text ?? ctx.message.caption
     const mentionEntities = ctx.message.text ? ctx.message.entities : ctx.message.caption_entities
 
-    history.addMessage({
-        id: ctx.message.message_id,
-        role: "user",
-        senderId: senderChat ? String(senderChat.id) : String(sender?.id ?? "unknown"),
-        senderName: senderChat?.title ?? (sender ? [sender.first_name, sender.last_name].filter(Boolean).join(" ") : "Desconocido"),
-        text: messageText ?? "[mensaje sin texto]",
-        timestamp: ctx.message.date,
-        replyToMessageId: ctx.message.reply_to_message?.message_id,
-        mentions: (mentionEntities ?? [])
-            .filter(entity => entity.type === "mention" || entity.type === "text_mention")
-            .map(entity => ({
-                text: (messageText ?? "").slice(entity.offset, entity.offset + entity.length),
-                userId: entity.type === "text_mention" ? String(entity.user.id) : null
-            }))
-    })
-
-    const triggeredByPattern = messageText ? matchesGroupTrigger(messageText, groupTriggers) : false
-    const triggeredByMention = messageText
-        ? mentionsBot(messageText, mentionEntities ?? [], ctx.me.id, ctx.me.username)
-        : false
-
-    if (!triggeredByPattern && !triggeredByMention) {
-        return
-    }
-
     try {
+        const attachments = await getTelegramAttachments(ctx.message, ctx.api)
+
+        if (attachments === null) {
+            return
+        }
+
+        const { images, files } = attachments
+
+        history.addMessage({
+            id: ctx.message.message_id,
+            role: "user",
+            senderId: senderChat ? String(senderChat.id) : String(sender?.id ?? "unknown"),
+            senderName: senderChat?.title ?? (sender ? [sender.first_name, sender.last_name].filter(Boolean).join(" ") : "Desconocido"),
+            text: messageText ?? (images.length ? "[imagen sin texto]" : files.length ? "[archivo sin texto]" : "[mensaje sin texto]"),
+            images,
+            files,
+            timestamp: ctx.message.date,
+            replyToMessageId: ctx.message.reply_to_message?.message_id,
+            mentions: (mentionEntities ?? [])
+                .filter(entity => entity.type === "mention" || entity.type === "text_mention")
+                .map(entity => ({
+                    text: (messageText ?? "").slice(entity.offset, entity.offset + entity.length),
+                    userId: entity.type === "text_mention" ? String(entity.user.id) : null
+                }))
+        })
+
+        const triggeredByPattern = messageText ? matchesGroupTrigger(messageText, groupTriggers) : false
+        const triggeredByMention = messageText
+            ? mentionsBot(messageText, mentionEntities ?? [], ctx.me.id, ctx.me.username)
+            : false
+
+        if (!triggeredByPattern && !triggeredByMention) {
+            return
+        }
+
         const historySnapshot = history.messages
         const messages = history.toModelMessages(ctx.message.message_id)
         const result = await agent.invoke({ messages }, { callbacks: [new PinoLangChainHandler(chatId)] })
