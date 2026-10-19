@@ -18,11 +18,11 @@
 
 import type { Api } from "grammy"
 import type { Message } from "grammy/types"
+import { supportedImageMimeTypes, supportedFileMimeTypes } from "../agent/mime-types.js"
 import { getAnimationFrames } from "../media/animation.js"
 import type { ChatAttachments } from "../chat/attachment.js"
 
 export const maxAttachmentBytes = 10 * 1024 * 1024
-const imageMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
 
 function getAttachment(message: Message) {
     const photo = message.photo?.length
@@ -68,7 +68,7 @@ function getAttachment(message: Message) {
     return undefined
 }
 
-// null means the entire message must be silently discarded for exceeding the size limit.
+// null means the entire message must be silently discarded (unsupported type or oversized).
 export async function getTelegramAttachments(message: Message, api: Pick<Api, "getFile" | "token">): Promise<ChatAttachments | null> {
     const attachment = getAttachment(message)
 
@@ -77,6 +77,18 @@ export async function getTelegramAttachments(message: Message, api: Pick<Api, "g
     }
 
     if (attachment.file_size !== undefined && attachment.file_size > maxAttachmentBytes) {
+        return null
+    }
+
+    const declaredMimeType = attachment.mime_type?.split(";")[0]?.trim().toLowerCase()
+    const hasGifFilename = attachment.file_name?.toLowerCase().endsWith(".gif") ?? false
+    const inferredMimeType = hasGifFilename ? "image/gif" : message.animation ? "video/mp4" : undefined
+    const mimeType = declaredMimeType || inferredMimeType
+    const isMp4Animation = Boolean(message.animation) && mimeType === "video/mp4"
+    const isSupportedImage = mimeType !== undefined && supportedImageMimeTypes.has(mimeType)
+    const isSupportedFile = mimeType !== undefined && supportedFileMimeTypes.has(mimeType)
+
+    if (!mimeType || (!isSupportedImage && !isSupportedFile && !isMp4Animation)) {
         return null
     }
 
@@ -137,20 +149,16 @@ export async function getTelegramAttachments(message: Message, api: Pick<Api, "g
     }
 
     const filename = attachment.file_name ?? file.file_path.split("/").at(-1) ?? "attachment"
-    const signature = bytes.subarray(0, 6).toString("ascii")
-    const isGif = signature === "GIF87a" || signature === "GIF89a"
-    const isMp4 = bytes.subarray(4, 8).toString("ascii") === "ftyp" || attachment.mime_type === "video/mp4"
-    const hasGifMetadata = attachment.mime_type === "image/gif" || filename.toLowerCase().endsWith(".gif")
-
-    if (isGif || hasGifMetadata || message.animation) {
-        const format = isGif || (hasGifMetadata && !isMp4) ? "gif" : "mp4"
+    if (mimeType === "image/gif" || isMp4Animation) {
+        const signature = bytes.subarray(0, 6).toString("ascii")
+        const isGif = signature === "GIF87a" || signature === "GIF89a"
+        const format = isGif || !isMp4Animation ? "gif" : "mp4"
         return { images: await getAnimationFrames(bytes, format), files: [] }
     }
 
-    const mimeType = attachment.mime_type ?? "application/octet-stream"
     const data = bytes.toString("base64")
 
-    if (imageMimeTypes.has(mimeType)) {
+    if (isSupportedImage) {
         return { images: [`data:${mimeType};base64,${data}`], files: [] }
     }
 

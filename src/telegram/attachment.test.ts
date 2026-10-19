@@ -81,8 +81,7 @@ describe("getTelegramAttachments", () => {
 
     it.each([
         { mime_type: "image/gif", file_name: "animation.gif" },
-        { file_name: "animation.GIF" },
-        {}
+        { file_name: "animation.GIF" }
     ])("converts GIF documents to visual frames even with missing MIME metadata: %j", async metadata => {
         const bytes = Buffer.from("GIF89a")
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(bytes)))
@@ -132,10 +131,14 @@ describe("getTelegramAttachments", () => {
 
     it.each([
         ["application/pdf", "report.pdf"],
-        ["application/zip", "archive.zip"],
-        ["image/svg+xml", "drawing.svg"],
-        [undefined, "unknown.bin"]
-    ])("accepts arbitrary documents with MIME type %s", async (mimeType, filename) => {
+        ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "report.docx"],
+        ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "table.xlsx"],
+        ["application/vnd.openxmlformats-officedocument.presentationml.presentation", "slides.pptx"],
+        ["text/plain", "notes.txt"],
+        ["text/csv", "table.csv"],
+        ["application/json", "data.json"],
+        ["application/yaml", "config.yaml"]
+    ])("accepts supported documents with MIME type %s", async (mimeType, filename) => {
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(new Uint8Array([1, 2, 3]))))
 
         expect(await getTelegramAttachments({
@@ -145,6 +148,46 @@ describe("getTelegramAttachments", () => {
             images: [],
             files: [{ filename, mimeType: mimeType ?? "application/octet-stream", data: "AQID" }]
         })
+    })
+
+    it.each([
+        "application/zip", "application/octet-stream", "image/svg+xml", "image/bmp",
+        "audio/mpeg", "audio/ogg", "video/mp4", "video/webm", "application/x-tgsticker",
+        "text/unsupported", undefined
+    ])("silently discards unsupported or unknown MIME type %s without downloading", async mimeType => {
+        const api = createApi()
+        const fetchMock = vi.fn()
+        vi.stubGlobal("fetch", fetchMock)
+
+        expect(await getTelegramAttachments({
+            ...baseMessage,
+            caption: "Revisa esto",
+            document: { file_id: "file", file_unique_id: "file", mime_type: mimeType }
+        }, api)).toBeNull()
+        expect(api.getFile).not.toHaveBeenCalled()
+        expect(fetchMock).not.toHaveBeenCalled()
+        expect(getAnimationFrames).not.toHaveBeenCalled()
+    })
+
+    it("normalizes MIME casing and parameters", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(new Uint8Array([1, 2, 3]))))
+
+        const attachments = await getTelegramAttachments({
+            ...baseMessage,
+            document: { file_id: "file", file_unique_id: "file", mime_type: " Text/Plain; charset=UTF-8 ", file_name: "notes.txt" }
+        }, createApi())
+
+        expect(attachments?.files[0].mimeType).toBe("text/plain")
+    })
+
+    it("rejects unsupported animation formats instead of forwarding them to the model", async () => {
+        const api = createApi()
+
+        expect(await getTelegramAttachments({
+            ...baseMessage,
+            animation: { file_id: "animation", file_unique_id: "animation", width: 16, height: 16, duration: 2, mime_type: "video/webm" }
+        }, api)).toBeNull()
+        expect(api.getFile).not.toHaveBeenCalled()
     })
 
     it("silently discards oversized attachments before looking up the file", async () => {
@@ -173,7 +216,7 @@ describe("getTelegramAttachments", () => {
 
         const attachments = await getTelegramAttachments({
             ...baseMessage,
-            document: { file_id: "file", file_unique_id: "file", file_size: maxAttachmentBytes }
+            document: { file_id: "file", file_unique_id: "file", file_size: maxAttachmentBytes, mime_type: "application/pdf" }
         }, createApi())
 
         expect(attachments?.files[0].data).toBe(Buffer.from(data).toString("base64"))

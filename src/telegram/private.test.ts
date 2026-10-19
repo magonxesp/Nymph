@@ -85,7 +85,12 @@ describe("handlePrivateMessage images", () => {
     })
 })
 
-it.each(["private", "group"] as const)("silently discards oversized attachments in %s chats", async (chatType) => {
+it.each([
+    { chatType: "private", mimeType: "application/pdf", size: maxAttachmentBytes + 1 },
+    { chatType: "group", mimeType: "application/pdf", size: maxAttachmentBytes + 1 },
+    { chatType: "private", mimeType: "application/zip", size: 100 },
+    { chatType: "group", mimeType: "application/zip", size: 100 }
+] as const)("silently discards rejected attachments: $chatType, $mimeType, $size", async ({ chatType, mimeType, size }) => {
     const chat = chatType === "private"
         ? { id: 8002, type: "private" as const, first_name: "Ana" }
         : { id: -8002, type: "group" as const, title: "Test group" }
@@ -98,7 +103,7 @@ it.each(["private", "group"] as const)("silently discards oversized attachments 
             from: { id: 1, is_bot: false, first_name: "Ana" },
             caption: "@nymph_bot revisa este archivo",
             caption_entities: [{ type: "mention", offset: 0, length: 10 }],
-            document: { file_id: "huge", file_unique_id: "huge", file_size: maxAttachmentBytes + 1 }
+            document: { file_id: "huge", file_unique_id: "huge", file_size: size, mime_type: mimeType }
         }
     }, api, me)
     const reply = vi.spyOn(ctx, "reply")
