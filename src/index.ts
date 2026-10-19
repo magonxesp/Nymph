@@ -17,7 +17,7 @@
  */
 
 import "dotenv/config"
-import { bot } from "./bot.js"
+import { bot } from "./telegram/bot.js"
 import { log } from "./logging.js"
 
 log.info('Starting...')

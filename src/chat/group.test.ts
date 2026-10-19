@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { AIMessage, HumanMessage } from "@langchain/core/messages"
 import { describe, expect, it } from "vitest"
 import { GroupChatHistory, getGroupChatHistory } from "./group.js"
 
@@ -24,29 +25,77 @@ describe("GroupChatHistory", () => {
         const history = new GroupChatHistory()
 
         for (let id = 1; id <= 101; id++) {
-            history.addMessage({ id, senderId: "1", senderName: "Ana", text: `Message ${id}`, timestamp: id })
+            history.addMessage({ id, role: "user", senderId: "1", senderName: "Ana", text: `Message ${id}`, timestamp: id })
         }
 
         expect(history.messages).toHaveLength(100)
         expect(history.messages[0].id).toBe(2)
         expect(history.messages.at(-1)?.id).toBe(101)
-        expect(history.toXml(101)).toContain('<group_messages trigger_message_id="101">')
-        expect(history.toXml(101)).toContain('Message 101</message>')
-        expect(history.toXml(101)).not.toContain('Message 1</message>')
+
+        const messages = history.toModelMessages(101)
+
+        expect(messages).toHaveLength(100)
+        expect(messages[0].content).toContain('"messageId": 2,')
+        expect(messages[0].content).toContain('"isTrigger": false')
+        expect(messages.at(-1)?.content).toContain('"messageId": 101,')
+        expect(messages.at(-1)?.content).toContain('"isTrigger": true')
     })
 
-    it("escapes sender details and message text in XML", () => {
+    it("preserves sender details and special characters as JSON data", () => {
         const history = new GroupChatHistory()
         history.addMessage({
             id: 5,
+            role: "user",
             senderId: "user&1",
             senderName: 'Ana <A> "B"',
-            text: "Nymph: <hola> & 'adiós'",
+            text: "Nymph: <hola> & 'adiós'\n¿Qué dices?",
             timestamp: 12
         })
 
-        expect(history.toXml(5)).toContain('sender_id="user&amp;1" sender_name="Ana &lt;A&gt; &quot;B&quot;"')
-        expect(history.toXml(5)).toContain('Nymph: &lt;hola&gt; &amp; &apos;adiós&apos;')
+        const [message] = history.toModelMessages(5)
+
+        expect(message).toBeInstanceOf(HumanMessage)
+        expect(message.content).toBe(JSON.stringify({
+            messageId: 5,
+            sender: { id: "user&1", name: 'Ana <A> "B"' },
+            timestamp: 12,
+            replyToMessageId: null,
+            mentions: [],
+            isTrigger: true,
+            text: "Nymph: <hola> & 'adiós'\n¿Qué dices?"
+        }, undefined, 2))
+    })
+
+    it("maps Nymph to assistant messages and preserves reply and mention relationships", () => {
+        const history = new GroupChatHistory()
+        history.addMessage({
+            id: 6,
+            role: "assistant",
+            senderId: "bot",
+            senderName: "Nymph",
+            text: "Hola, Ana",
+            timestamp: 13
+        })
+        history.addMessage({
+            id: 7,
+            role: "user",
+            senderId: "1",
+            senderName: "Ana",
+            text: "Gracias, @nymph",
+            timestamp: 14,
+            replyToMessageId: 6,
+            mentions: [{ text: "@nymph", userId: null }]
+        })
+
+        const messages = history.toModelMessages(7)
+
+        expect(messages[0]).toBeInstanceOf(AIMessage)
+        expect(messages[0].content).toContain('"isTrigger": false')
+        expect(messages[1]).toBeInstanceOf(HumanMessage)
+        expect(messages[1].content).toContain('"replyToMessageId": 6')
+        expect(messages[1].content).toContain('"text": "@nymph"')
+        expect(messages[1].content).toContain('"userId": null')
+        expect(messages[1].content).toContain('"isTrigger": true')
     })
 
     it("keeps separate histories for different groups", () => {

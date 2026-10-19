@@ -16,27 +16,36 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { AIMessage, HumanMessage } from "@langchain/core/messages"
+import { z } from "zod"
+
+export type GroupMention = {
+    text: string
+    userId: string | null
+}
+
 export type GroupMessage = {
     id: number
+    role: "user" | "assistant"
     senderId: string
     senderName: string
     text: string
     timestamp: number
+    replyToMessageId?: number
+    mentions?: GroupMention[]
 }
 
-function escapeXml(value: string): string {
-    return value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F&<>"']/g, character => {
-        const entities: Record<string, string> = {
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&apos;"
-        }
+const groupResponseMessageSchema = z.object({
+    text: z.string().describe("Texto de la respuesta, sin Markdown ni HTML"),
+    replyToMessageId: z.number().int().nullable().describe("Por defecto null. ID de un mensaje del historial solo para distinguir hilos entre muchos mensajes o aclarar una respuesta específica que sería ambigua sin cita"),
+    mentionUserIds: z.array(z.string()).describe("IDs de usuarios del historial a los que mencionar; vacío si no es necesario")
+}).strict()
 
-        return entities[character] ?? ""
-    })
-}
+export const groupResponseSchema = z.object({
+    messages: z.array(groupResponseMessageSchema).min(1).describe("Mensajes breves en orden de envío; usa tantos como necesites para responder con naturalidad")
+}).strict()
+
+export type GroupResponse = z.infer<typeof groupResponseSchema>
 
 export class GroupChatHistory {
     public static readonly messageCountLimit = 100
@@ -55,16 +64,27 @@ export class GroupChatHistory {
         return this._messages.slice()
     }
 
-    public toXml(triggerMessageId: number): string {
-        const messages = this._messages.map(message => {
-            const senderId = escapeXml(message.senderId)
-            const senderName = escapeXml(message.senderName)
-            const text = escapeXml(message.text)
+    public toModelMessages(triggerMessageId: number): (HumanMessage | AIMessage)[] {
+        return this._messages.map(message => {
+            const content = JSON.stringify({
+                messageId: message.id,
+                sender: {
+                    id: message.senderId,
+                    name: message.senderName
+                },
+                timestamp: message.timestamp,
+                replyToMessageId: message.replyToMessageId ?? null,
+                mentions: message.mentions ?? [],
+                isTrigger: message.id === triggerMessageId,
+                text: message.text
+            }, undefined, 2)
 
-            return `  <message id="${message.id}" sender_id="${senderId}" sender_name="${senderName}" timestamp="${message.timestamp}">${text}</message>`
-        }).join("\n")
+            if (message.role === "assistant") {
+                return new AIMessage(content)
+            }
 
-        return `<group_messages trigger_message_id="${triggerMessageId}">\n${messages}\n</group_messages>`
+            return new HumanMessage(content)
+        })
     }
 }
 

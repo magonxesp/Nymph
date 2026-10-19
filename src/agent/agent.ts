@@ -19,42 +19,67 @@
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { ChatOpenAI } from "@langchain/openai"
-import { createAgent } from "langchain"
+import { createAgent, providerStrategy } from "langchain"
+import { groupResponseSchema } from "../chat/group.js"
 import { aiModel, openAIApiKey, promptsDir } from "../env.js"
 import { loadSkills, skills } from "./skill.js"
 import tools from "./tool.js"
 import { log } from "../logging.js"
 
-const behaviorSystemPrompt = await readFile(path.join(promptsDir, "system.md"), "utf8")
+const behaviorSystemPrompt = await readFile(path.join(promptsDir, "behavior.md"), "utf8")
 const availableSkills = await loadSkills()
-const skillList = availableSkills.map(({ name, path, description }) => (`
-    <skill>
-        <name>${name}</name>
-        <path>${path}</path>
-        <description>${description}</description>
-    </skill>
-`)).join('\n')
+const skillList = JSON.stringify(availableSkills, undefined, 2)
 
 const skillIndex = skills.size > 0
-    ? `Skills disponibles (carga solo las necesarias con get_skill):\n<skills>${skillList}\n</skills>`
+    ? `Skills disponibles (carga solo las necesarias con get_skill):\n${skillList}`
     : "No hay skills adicionales disponibles."
 
 if (!openAIApiKey) {
     throw new Error("NYMPH_OPENAI_API_KEY is required")
 }
 
-const systemPrompt = `${behaviorSystemPrompt}\n\n${skillIndex}`
+log.info({ skills: availableSkills.map(skill => skill.name) }, "Skills loaded")
 
-log.info({ skills: availableSkills.map(skill => skill.name) }, 'Skills loaded')
-log.debug({ systemPrompt }, 'System prompt builded')
+export async function createPrivateChatAgent() {
+    const systemPrompt = [
+        behaviorSystemPrompt,
+        skillIndex
+    ].filter(Boolean).join("\n\n")
 
-export const agent = createAgent({
-    model: new ChatOpenAI({
-        apiKey: openAIApiKey,
-        model: aiModel,
-        useResponsesApi: true,
-        verbosity: 'low'
-    }),
-    tools,
-    systemPrompt,
-})
+    log.debug({ systemPrompt }, "System prompt built")
+
+    return createAgent({
+        model: new ChatOpenAI({
+            apiKey: openAIApiKey,
+            model: aiModel,
+            useResponsesApi: true,
+            verbosity: "low"
+        }),
+        tools,
+        systemPrompt,
+    })
+}
+
+export async function createGroupChatAgent() {
+    const groupResponsePrompt = await readFile(path.join(promptsDir, "group-response.md"), "utf8")
+
+    const systemPrompt = [
+        behaviorSystemPrompt,
+        groupResponsePrompt,
+        skillIndex
+    ].filter(Boolean).join("\n\n")
+
+    log.debug({ systemPrompt }, "System prompt built")
+
+    return createAgent({
+        model: new ChatOpenAI({
+            apiKey: openAIApiKey,
+            model: aiModel,
+            useResponsesApi: true,
+            verbosity: "low"
+        }),
+        tools,
+        systemPrompt,
+        responseFormat: providerStrategy({ schema: groupResponseSchema, strict: true }),
+    })
+}
