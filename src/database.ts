@@ -1,0 +1,31 @@
+/**
+ * Nymph
+ * Copyright (C) 2026  MagonxESP
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import "dotenv/config"
+import knex from "knex"
+
+export const database = knex({
+    client: "pg",
+    connection: {
+        host: process.env.NYMPH_POSTGRES_HOST ?? "localhost",
+        port: Number(process.env.NYMPH_POSTGRES_PORT ?? 5432),
+        database: process.env.NYMPH_POSTGRES_DB ?? "nymph",
+        user: process.env.NYMPH_POSTGRES_USER ?? "nymph",
+        password: process.env.NYMPH_POSTGRES_PASSWORD
+    }
+})

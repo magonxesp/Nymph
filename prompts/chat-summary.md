@@ -1,1 +1,0 @@
-Resume la conversación en menos de 512 caracteres. Incluye solo lo más relevante para continuarla: datos importantes, preferencias, decisiones y asuntos pendientes. No añadas introducciones ni información que no aparezca en los mensajes. Responde únicamente con el resumen.

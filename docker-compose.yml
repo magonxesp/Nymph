@@ -3,3 +3,29 @@ services:
     build: .
     env_file:
       - .env
+    environment:
+      NYMPH_POSTGRES_HOST: postgres
+      NYMPH_POSTGRES_PORT: 5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    build: ./docker/postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    environment:
+      POSTGRES_DB: ${NYMPH_POSTGRES_DB:-nymph}
+      POSTGRES_USER: ${NYMPH_POSTGRES_USER:-nymph}
+      POSTGRES_PASSWORD: ${NYMPH_POSTGRES_PASSWORD:-nymph}
+
+volumes:
+  postgres:

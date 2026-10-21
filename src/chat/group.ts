@@ -21,6 +21,7 @@ import { z } from "zod"
 import type { ChatFile } from "./attachment.js"
 import { toHumanMessage } from "./message.js"
 import { responseMediaListSchema } from "./response.js"
+import { ChatHistory } from "./history.js"
 
 export type GroupMention = {
     text: string
@@ -53,25 +54,15 @@ export const groupResponseSchema = z.object({
 
 export type GroupResponse = z.infer<typeof groupResponseSchema>
 
-export class GroupChatHistory {
+export class GroupChatHistory extends ChatHistory<GroupMessage> {
     public static readonly messageCountLimit = 100
 
-    private readonly _messages: GroupMessage[] = []
-
-    public addMessage(message: GroupMessage): void {
-        this._messages.push(message)
-
-        if (this._messages.length > GroupChatHistory.messageCountLimit) {
-            this._messages.splice(0, this._messages.length - GroupChatHistory.messageCountLimit)
-        }
-    }
-
-    public get messages(): GroupMessage[] {
-        return this._messages.slice()
+    public constructor() {
+        super(GroupChatHistory.messageCountLimit)
     }
 
     public toModelMessages(triggerMessageId: number): (HumanMessage | AIMessage)[] {
-        return this._messages.map(message => {
+        return this.messages.map(message => {
             const content = JSON.stringify({
                 messageId: message.id,
                 sender: {

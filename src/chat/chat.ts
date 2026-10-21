@@ -16,8 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 import type { ChatFile } from "./attachment.js"
-import { log } from '../logging.js'
-import { OpenAIChatSummarizer, ChatSummarizer } from './summarizer.js'
+import { ChatHistory } from "./history.js"
 
 export type ChatMessage = {
     role: 'assistant' | 'user'
@@ -26,18 +25,11 @@ export type ChatMessage = {
     files?: ChatFile[]
 }
 
-export class PrivateChatHistory {
-    private summarizer: ChatSummarizer
-    private readonly _messages: ChatMessage[] = []
-    private isCompacting: boolean = false
-    private readonly chatId: string
+export class PrivateChatHistory extends ChatHistory<ChatMessage> {
+    public static readonly messageCountLimit = 100
 
-    public static readonly messageCountLimit = 1000
-
-    public constructor(chatId: string, messages: ChatMessage[], summarizer: ChatSummarizer) {
-        this.chatId = chatId;
-        this._messages = messages;
-        this.summarizer = summarizer
+    public constructor() {
+        super(PrivateChatHistory.messageCountLimit)
     }
 
     public addUserMessage(content: string, images?: string[], files?: ChatFile[]) {
@@ -55,41 +47,8 @@ export class PrivateChatHistory {
             content
         })
     }
-
-    public addMessage(message: ChatMessage) {
-        this._messages.push(message);
-
-        if (!this.isCompacting && this.messagesCount > PrivateChatHistory.messageCountLimit) {
-            this.isCompacting = true
-            const messagesToCompact = this._messages.slice()
-            log.info({ chatId: this.chatId, messages: messagesToCompact.length }, 'Compacting chat history')
-
-            this.compact(messagesToCompact)
-                .then(messages => log.info({ chatId: this.chatId, messages }, 'Chat history compact completed'))
-                .catch(error => log.warn({ error, chatId: this.chatId }, 'Failed to compact chat history'))
-                .finally(() => this.isCompacting = false)
-        }
-    }
-
-    public get messagesCount() {
-        return this._messages.length
-    }
-
-    public get messages() {
-        return this._messages.slice()
-    }
-
-    /**
-     * Compact messages into one and return current history message count after compact
-     */
-    private async compact(messagesToCompact: ChatMessage[]): Promise<number> {
-        const summarizedMessage = await this.summarizer.summarize(messagesToCompact)
-        this._messages.splice(0, messagesToCompact.length, summarizedMessage)
-        return this._messages.length
-    }
 }
 
-const chatSummarizer: ChatSummarizer = new OpenAIChatSummarizer()
 const privateChatHistories = new Map<string, PrivateChatHistory>()
 
 export function getPrivateChatHistory(chatId: string): PrivateChatHistory {
@@ -99,7 +58,7 @@ export function getPrivateChatHistory(chatId: string): PrivateChatHistory {
         return existingHistory
     }
 
-    const history = new PrivateChatHistory(chatId, [], chatSummarizer)
+    const history = new PrivateChatHistory()
     privateChatHistories.set(chatId, history)
 
     return history

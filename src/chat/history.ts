@@ -1,0 +1,65 @@
+/**
+ * Nymph
+ * Copyright (C) 2026  MagonxESP
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import { EventEmitter } from "node:events"
+
+export type ChatHistorySnapshot<Message> = {
+    messages: Message[]
+    lastMessageSequence: number
+}
+
+export class ChatHistory<Message> extends EventEmitter<{
+    snapshot: [snapshot: ChatHistorySnapshot<Message>]
+}> {
+    private readonly _messages: Message[] = []
+    private messageSequence = 0
+    private lastSnapshotMessageSequence = 0
+
+    protected constructor(private readonly messageCountLimit: number) {
+        super()
+    }
+
+    public addMessage(message: Message): void {
+        this._messages.push(message)
+        this.messageSequence++
+
+        if (this._messages.length > this.messageCountLimit) {
+            this._messages.splice(0, this._messages.length - this.messageCountLimit)
+        }
+
+        const newMessageCount = this.messageSequence - this.lastSnapshotMessageSequence
+
+        if (newMessageCount >= this.messageCountLimit) {
+            const snapshot: ChatHistorySnapshot<Message> = {
+                messages: structuredClone(this._messages),
+                lastMessageSequence: this.messageSequence
+            }
+
+            this.lastSnapshotMessageSequence = this.messageSequence
+            this.emit("snapshot", snapshot)
+        }
+    }
+
+    public get messagesCount(): number {
+        return this._messages.length
+    }
+
+    public get messages(): Message[] {
+        return this._messages.slice()
+    }
+}
