@@ -25,6 +25,11 @@ export function toModelMessage(message: ChatMessage): AIMessage | HumanMessage {
         return toHumanMessage(message.content, message.images, message.files)
     }
 
+    if (message.images?.length) {
+        // Assistant output messages cannot carry input images in the Responses API.
+        return toHumanMessage(`Contenido multimedia enviado por el asistente: ${message.content}`, message.images)
+    }
+
     return new AIMessage(message.content)
 }
 

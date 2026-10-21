@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {describe, expect, it, vi} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 import {PrivateChatHistory, ChatMessage, getPrivateChatHistory} from "./chat.js";
 import {ChatSummarizer} from "./summarizer.js";
 
@@ -29,7 +29,32 @@ const summarizerMock: ChatSummarizer = {
     summarize: vi.fn()
 }
 
+afterEach(() => {
+    vi.unstubAllGlobals()
+})
+
 describe('Single Chat History', () => {
+    it('stores assistant text without downloading media', async () => {
+        const fetchMock = vi.fn()
+        vi.stubGlobal('fetch', fetchMock)
+        const history = new PrivateChatHistory('assistant-text', [], summarizerMock)
+
+        await history.addAssistantMessage('Hola')
+
+        expect(history.messages).toEqual([{ role: 'assistant', content: 'Hola' }])
+        expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it('retains the sent URL when downloading assistant media fails', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Download failed')))
+        const history = new PrivateChatHistory('assistant-media-failure', [], summarizerMock)
+        const url = 'https://example.com/image.jpg'
+
+        await history.addAssistantMessage(url, url)
+
+        expect(history.messages).toEqual([{ role: 'assistant', content: url }])
+    })
+
     it('compact all chat history when it reach the message count limit', async () => {
         vi.mocked(summarizerMock.summarize).mockResolvedValue(({
             role: 'assistant',

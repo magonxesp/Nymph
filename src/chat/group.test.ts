@@ -17,10 +17,77 @@
  */
 
 import { AIMessage, HumanMessage } from "@langchain/core/messages"
-import { describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { GroupChatHistory, getGroupChatHistory } from "./group.js"
+import { downloadImages } from "../media/remote.js"
+import type { GroupMessageContext } from "../telegram/group-message.js"
+
+vi.mock("../media/remote.js", () => ({ downloadImages: vi.fn() }))
+
+beforeEach(() => {
+    vi.mocked(downloadImages).mockReset()
+})
 
 describe("GroupChatHistory", () => {
+    const ctx: GroupMessageContext = {
+        message: {
+            message_id: 5, date: 1,
+            chat: { id: -1, type: "group", title: "Test group" },
+            text: "Mensaje del usuario"
+        },
+        me: { id: 99, first_name: "Nymph" }
+    }
+    const sentMessage = {
+        message_id: 1, date: 2,
+        chat: { id: -1, type: "group" as const, title: "Test group" },
+        reply_to_message: { ...ctx.message, reply_to_message: undefined }
+    }
+
+    it("stores assistant text without downloading media", async () => {
+        const history = new GroupChatHistory()
+
+        await history.addAssistantMessage(ctx, { message: sentMessage, text: "Hola" })
+
+        expect(history.messages).toEqual([{
+            id: 1, senderId: "99", senderName: "Nymph", role: "assistant",
+            text: "Hola", timestamp: 2, replyToMessageId: 5, mentions: []
+        }])
+        expect(downloadImages).not.toHaveBeenCalled()
+        expect(history.toModelMessages(2)[0]).toBeInstanceOf(AIMessage)
+    })
+
+    it("downloads assistant media and keeps it visible in later model requests", async () => {
+        const history = new GroupChatHistory()
+        const image = "data:image/jpeg;base64,AQID"
+        const url = "https://example.com/image.jpg"
+        vi.mocked(downloadImages).mockResolvedValue([image])
+
+        await history.addAssistantMessage(ctx, { message: sentMessage, text: url }, url)
+
+        expect(downloadImages).toHaveBeenCalledWith(url)
+        expect(history.messages).toEqual([{
+            id: 1, senderId: "99", senderName: "Nymph", role: "assistant",
+            text: url, timestamp: 2, replyToMessageId: 5, mentions: [], images: [image]
+        }])
+        expect(history.toModelMessages(2)[0].content).toEqual([
+            { type: "text", text: expect.stringContaining("Contenido multimedia enviado por el asistente:") },
+            { type: "image_url", image_url: { url: image } }
+        ])
+    })
+
+    it("keeps the sent message when downloading assistant media fails", async () => {
+        const history = new GroupChatHistory()
+        const url = "https://example.com/image.jpg"
+        vi.mocked(downloadImages).mockRejectedValue(new Error("Download failed"))
+
+        await history.addAssistantMessage(ctx, { message: sentMessage, text: url }, url)
+
+        expect(history.messages).toEqual([{
+            id: 1, senderId: "99", senderName: "Nymph", role: "assistant",
+            text: url, timestamp: 2, replyToMessageId: 5, mentions: []
+        }])
+    })
+
     it("keeps only the latest 100 messages, including the trigger", () => {
         const history = new GroupChatHistory()
 

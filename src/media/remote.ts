@@ -1,5 +1,6 @@
 import { getAnimationFrames } from "./animation.js"
 import { resizeImage } from "./image.js"
+import { log } from "../logging.js"
 
 export const maxRemoteMediaBytes = 20 * 1024 * 1024
 
@@ -12,8 +13,11 @@ const mediaTypes = new Map([
     [".mp4", "video/mp4"]
 ])
 
+const elapsedTime = (start: Date) =>  new Date().getTime() - start.getTime()
+
 export async function downloadImages(url: string): Promise<string[]> {
     const mediaUrl = new URL(url)
+    const startTime = new Date()
 
     if (mediaUrl.protocol !== "https:" && mediaUrl.protocol !== "http:") {
         throw new Error("Unsupported media URL protocol")
@@ -22,6 +26,7 @@ export async function downloadImages(url: string): Promise<string[]> {
     const response = await fetch(mediaUrl, { signal: AbortSignal.timeout(30_000) })
 
     if (!response.ok || !response.body) {
+        log.debug({ time: elapsedTime(startTime), url }, 'downloadImages finished')
         throw new Error(`Media download failed with HTTP ${response.status}`)
     }
 
@@ -33,11 +38,13 @@ export async function downloadImages(url: string): Promise<string[]> {
 
     if (!mimeType || ![...mediaTypes.values()].includes(mimeType)) {
         await response.body.cancel()
+        log.debug({ time: elapsedTime(startTime), url }, 'downloadImages finished')
         throw new Error("Unsupported media format")
     }
 
     if (Number(response.headers.get("content-length")) > maxRemoteMediaBytes) {
         await response.body.cancel()
+        log.debug({ time: elapsedTime(startTime), url }, 'downloadImages finished')
         throw new Error("Media exceeds the 20 MiB download limit")
     }
 
@@ -57,6 +64,7 @@ export async function downloadImages(url: string): Promise<string[]> {
 
             if (size > maxRemoteMediaBytes) {
                 await reader.cancel()
+                log.debug({ time: elapsedTime(startTime), url }, 'downloadImages finished')
                 throw new Error("Media exceeds the 20 MiB download limit")
             }
 
@@ -69,9 +77,12 @@ export async function downloadImages(url: string): Promise<string[]> {
     const bytes = Buffer.concat(chunks, size)
 
     if (mimeType === "image/gif" || mimeType === "video/mp4") {
-        return getAnimationFrames(bytes, mimeType === "image/gif" ? "gif" : "mp4")
+        const frames = getAnimationFrames(bytes, mimeType === "image/gif" ? "gif" : "mp4")
+        log.debug({ time: elapsedTime(startTime), url }, 'downloadImages finished')
+        return frames
     }
 
     const image = await resizeImage(bytes, mimeType)
+    log.debug({ time: elapsedTime(startTime), url }, 'downloadImages finished')
     return [`data:${mimeType};base64,${image.toString("base64")}`]
 }

@@ -69,19 +69,7 @@ export const rule34RandomPost = tool(
                 return `No se encontraron posts para el tag ${input.tag}.`
             }
 
-            let images: string[] = []
-
-            try {
-                images = await downloadImages(post.file_url)
-            } catch (error) {
-                log.warn({ error, tool: 'rule34_random_post', input }, "Download rule34 image failed")
-                return [{ type: "text", text: post.file_url }]
-            }
-
-            return [
-                { type: "text", text: post.file_url },
-                ...images.map(url => ({ type: "image_url", image_url: { url } }))
-            ]
+            return post.file_url
         } catch (error) {
             log.warn({ error, tool: 'rule34_random_post', input }, "Rule34 random post search failed")
             return { error: error instanceof Error ? error.message : String(error) }
@@ -117,30 +105,12 @@ export const rule34Posts = tool(
     }
 )
 
-export const rule34FetchPostFiles = tool(
-    async (input) => {
-        try {
-            const images = await downloadImages(input.file_url)
-            return images.map(url => ({ type: "image_url", image_url: { url } }))
-        } catch (error) {
-            log.warn({ error, tool: 'rule34_fetch_post_files', input }, "Rule34 post files fetch failed")
-            return { error: error instanceof Error ? error.message : String(error) }
-        }
-    },
-    {
-        name: "rule34_fetch_post_files",
-        description: "Descarga las imágenes del file_url de un post de Rule34 y se redimensionan para poder verlas; las animaciones se muestran como fotogramas.",
-        schema: z.object({ file_url: z.string().min(1).describe("Url que viene en el campo file_url de un post de Rule34") }),
-    }
-)
-
 const tools = [
     getSkill,
     readTextFile,
     rule34AutocompleteTags,
     rule34RandomPost,
-    rule34Posts,
-    rule34FetchPostFiles
+    rule34Posts
 ]
 
 export default tools

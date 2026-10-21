@@ -16,11 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AIMessage, HumanMessage } from "@langchain/core/messages"
+import type { AIMessage, HumanMessage } from "@langchain/core/messages"
 import { z } from "zod"
 import type { ChatFile } from "./attachment.js"
-import { toHumanMessage } from "./message.js"
+import { toModelMessage } from "./message.js"
 import { responseMediaListSchema } from "./response.js"
+import { downloadImages } from "../media/remote.js"
+import { log } from "../logging.js"
+import { createGroupMessage } from "../telegram/group-message.js"
+import type { GroupMessageContext, GroupMessageOptions } from "../telegram/group-message.js"
 
 export type GroupMention = {
     text: string
@@ -58,6 +62,29 @@ export class GroupChatHistory {
 
     private readonly _messages: GroupMessage[] = []
 
+    public async addAssistantMessage(
+        ctx: GroupMessageContext,
+        options: GroupMessageOptions = {},
+        mediaUrl?: string
+    ): Promise<void> {
+        const message = createGroupMessage(ctx, "assistant", options)
+        let images = message.images ?? []
+
+        if (mediaUrl) {
+            try {
+                images = await downloadImages(mediaUrl)
+            } catch (error) {
+                log.warn({ err: error, messageId: message.id }, "Failed to download assistant media for group chat history")
+            }
+        }
+
+        this.addMessage({
+            ...message,
+            role: "assistant",
+            ...(images.length ? { images } : {})
+        })
+    }
+
     public addMessage(message: GroupMessage): void {
         this._messages.push(message)
 
@@ -85,11 +112,12 @@ export class GroupChatHistory {
                 text: message.text
             }, undefined, 2)
 
-            if (message.role === "assistant") {
-                return new AIMessage(content)
-            }
-
-            return toHumanMessage(content, message.images, message.files)
+            return toModelMessage({
+                role: message.role,
+                content,
+                images: message.images,
+                files: message.files
+            })
         })
     }
 }

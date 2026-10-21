@@ -57,6 +57,7 @@ export async function createPrivateChatAgent() {
             apiKey: openAIApiKey,
             model: aiModel,
             useResponsesApi: true,
+            reasoning: { summary: "auto" },
             verbosity: "low"
         }),
         tools,
@@ -81,6 +82,7 @@ export async function createGroupChatAgent() {
             apiKey: openAIApiKey,
             model: aiModel,
             useResponsesApi: true,
+            reasoning: { summary: "auto" },
             verbosity: "low"
         }),
         tools,
