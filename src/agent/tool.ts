@@ -94,11 +94,53 @@ export const rule34RandomPost = tool(
     }
 )
 
+export const rule34Posts = tool(
+    async (input) => {
+        try {
+            return await rule34Client.getPosts(input.tag, {
+                page: input.page,
+                limit: input.limit
+            })
+        } catch (error) {
+            log.warn({ error, tool: 'rule34_posts', input }, "Rule34 post search failed")
+            return { error: error instanceof Error ? error.message : String(error) }
+        }
+    },
+    {
+        name: "rule34_posts",
+        description: "Devuelve un array de posts de Rule34 que tenga el tag indicado.",
+        schema: z.object({
+            tag: z.string().min(1).describe("Tag de Rule34 usado para buscar el post"),
+            page: z.number().min(0).describe("Numero de la pagina del dataset de los posts"),
+            limit: z.number().min(1).max(15).describe("Limite de la cantidad de posts que pueden haver en cada pagina"),
+        }),
+    }
+)
+
+export const rule34FetchPostFiles = tool(
+    async (input) => {
+        try {
+            const images = await downloadImages(input.file_url)
+            return images.map(url => ({ type: "image_url", image_url: { url } }))
+        } catch (error) {
+            log.warn({ error, tool: 'rule34_fetch_post_files', input }, "Rule34 post files fetch failed")
+            return { error: error instanceof Error ? error.message : String(error) }
+        }
+    },
+    {
+        name: "rule34_fetch_post_files",
+        description: "Descarga las imágenes del file_url de un post de Rule34 y se redimensionan para poder verlas; las animaciones se muestran como fotogramas.",
+        schema: z.object({ file_url: z.string().min(1).describe("Url que viene en el campo file_url de un post de Rule34") }),
+    }
+)
+
 const tools = [
     getSkill,
     readTextFile,
     rule34AutocompleteTags,
-    rule34RandomPost
+    rule34RandomPost,
+    rule34Posts,
+    rule34FetchPostFiles
 ]
 
 export default tools
