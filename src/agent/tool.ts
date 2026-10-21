@@ -21,6 +21,8 @@ import { skills } from "./skill.js";
 import z from "zod";
 import fs from "node:fs/promises"
 import { Rule34Client } from "../booru.js"
+import { downloadImages } from "../media/remote.js"
+import { log } from '../logging.js'
 
 const rule34Client = new Rule34Client()
 
@@ -43,7 +45,14 @@ export const getSkill = tool(
 )
 
 export const rule34AutocompleteTags = tool(
-    async ({ tag }) => await rule34Client.autocompleteTags(tag),
+    async (input) => {
+        try {
+            return await rule34Client.autocompleteTags(input.tag)
+        } catch (error) {
+            log.warn({ error, tool: 'rule34_autocomplete_tags', input }, "Rule34 autocomplete tags failed")
+            return { error: error instanceof Error ? error.message : String(error) }
+        }
+    },
     {
         name: "rule34_autocomplete_tags",
         description: "Busca sugerencias para un tag de Rule34. Usa el campo value de una sugerencia para buscar posts.",
@@ -52,18 +61,35 @@ export const rule34AutocompleteTags = tool(
 )
 
 export const rule34RandomPost = tool(
-    async ({ tag }) => {
-        const post = await rule34Client.getRandomPost(tag)
+    async (input) => {
+        try {
+            const post = await rule34Client.getRandomPost(input.tag)
 
-        if (!post) {
-            return `No se encontraron posts para el tag ${tag}.`
+            if (!post) {
+                return `No se encontraron posts para el tag ${input.tag}.`
+            }
+
+            let images: string[] = []
+
+            try {
+                images = await downloadImages(post.file_url)
+            } catch (error) {
+                log.warn({ error, tool: 'rule34_random_post', input }, "Download rule34 image failed")
+                return [{ type: "text", text: post.file_url }]
+            }
+
+            return [
+                { type: "text", text: post.file_url },
+                ...images.map(url => ({ type: "image_url", image_url: { url } }))
+            ]
+        } catch (error) {
+            log.warn({ error, tool: 'rule34_random_post', input }, "Rule34 random post search failed")
+            return { error: error instanceof Error ? error.message : String(error) }
         }
-
-        return post.file_url
     },
     {
         name: "rule34_random_post",
-        description: "Devuelve la URL del archivo de un post aleatorio de Rule34 que tenga el tag indicado.",
+        description: "Devuelve la URL original y el contenido visual de un post aleatorio de Rule34 que tenga el tag indicado. Las imágenes se descargan y redimensionan para poder verlas; las animaciones se muestran como fotogramas.",
         schema: z.object({ tag: z.string().min(1).describe("Tag de Rule34 usado para buscar el post") }),
     }
 )

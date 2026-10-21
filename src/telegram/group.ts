@@ -17,6 +17,7 @@
  */
 
 import type { Context, Filter } from "grammy"
+import type { Message } from "grammy/types"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { createGroupChatAgent } from "../agent/agent.js"
@@ -24,20 +25,117 @@ import { prepareGroupReplies } from "./group-response.js"
 import { log } from "../logging.js"
 import { PinoLangChainHandler } from "../agent/logging.js"
 import { getGroupChatHistory } from "../chat/group.js"
+import type { GroupMessage } from "../chat/group.js"
 import { compileGroupTriggers, matchesGroupTrigger, mentionsBot } from "../chat/group-triggers.js"
 import { rootDir } from "../env.js"
 import { getTelegramAttachments } from "./attachment.js"
+import { sendTelegramResponse } from "./response.js"
 
 const groupTriggers = compileGroupTriggers(await readFile(path.join(rootDir, "group-triggers.txt"), "utf8"))
 const agent = await createGroupChatAgent()
 
+type GroupMessageOptions = Partial<Pick<GroupMessage, "text" | "images" | "files" | "mentions">> & {
+    message?: Message
+}
+
+function createGroupMessage(
+    ctx: Filter<Context, "message">,
+    role: GroupMessage["role"],
+    options: GroupMessageOptions = {}
+): GroupMessage {
+    const message = options.message ?? ctx.message
+    const sender = role === "assistant" ? ctx.me : message.from
+    const senderChat = role === "user" ? message.sender_chat : undefined
+    const text = options.text ?? message.text ?? message.caption
+    const mentionEntities = message.text ? message.entities : message.caption_entities
+    const { images, files } = options
+
+    const mapSenderId = (): string => {
+        if (senderChat) {
+            return String(senderChat.id)
+        }
+
+        return String(sender?.id ?? "unknown")
+    }
+
+    const mapSenderName = (): string => {
+        if (role === "assistant") {
+            return ctx.me.first_name
+        }
+
+        if (senderChat?.title !== undefined) {
+            return senderChat.title
+        }
+
+        if (sender) {
+            return [sender.first_name, sender.last_name].filter(Boolean).join(" ")
+        }
+
+        return "Desconocido"
+    }
+
+    const mapText = (): string => {
+        if (text !== undefined) {
+            return text
+        }
+
+        if (images?.length) {
+            return "[imagen sin texto]"
+        }
+
+        if (files?.length) {
+            return "[archivo sin texto]"
+        }
+
+        return "[mensaje sin texto]"
+    }
+
+    const mapMentions = (): GroupMessage["mentions"] => {
+        return options.mentions ?? (mentionEntities ?? [])
+            .filter(entity => entity.type === "mention" || entity.type === "text_mention")
+            .map(entity => ({
+                text: (text ?? "").slice(entity.offset, entity.offset + entity.length),
+                userId: entity.type === "text_mention" ? String(entity.user.id) : null
+            }))
+    }
+
+    return {
+        id: message.message_id,
+        role,
+        senderId: mapSenderId(),
+        senderName: mapSenderName(),
+        text: mapText(),
+        images,
+        files,
+        timestamp: message.date,
+        replyToMessageId: message.reply_to_message?.message_id,
+        mentions: mapMentions()
+    }
+}
+
+function isGroupTriggered(ctx: Filter<Context, "message">): boolean {
+    const triggeredByReply = ctx.message.reply_to_message?.from?.id === ctx.me.id
+
+    if (triggeredByReply) {
+        return true
+    }
+
+    const messageText = ctx.message.text ?? ctx.message.caption
+
+    if (!messageText) {
+        return false
+    }
+
+    const mentionEntities = ctx.message.text ? ctx.message.entities : ctx.message.caption_entities
+    const triggeredByPattern = matchesGroupTrigger(messageText, groupTriggers)
+    const triggeredByMention = mentionsBot(messageText, mentionEntities ?? [], ctx.me.id, ctx.me.username)
+
+    return triggeredByPattern || triggeredByMention
+}
+
 export async function handleGroupMessage(ctx: Filter<Context, "message">): Promise<void> {
     const chatId = ctx.chat.id
     const history = getGroupChatHistory(`telegram:${chatId}`)
-    const sender = ctx.from
-    const senderChat = ctx.message.sender_chat
-    const messageText = ctx.message.text ?? ctx.message.caption
-    const mentionEntities = ctx.message.text ? ctx.message.entities : ctx.message.caption_entities
 
     try {
         const attachments = await getTelegramAttachments(ctx.message, ctx.api)
@@ -46,32 +144,9 @@ export async function handleGroupMessage(ctx: Filter<Context, "message">): Promi
             return
         }
 
-        const { images, files } = attachments
+        history.addMessage(createGroupMessage(ctx, "user", attachments))
 
-        history.addMessage({
-            id: ctx.message.message_id,
-            role: "user",
-            senderId: senderChat ? String(senderChat.id) : String(sender?.id ?? "unknown"),
-            senderName: senderChat?.title ?? (sender ? [sender.first_name, sender.last_name].filter(Boolean).join(" ") : "Desconocido"),
-            text: messageText ?? (images.length ? "[imagen sin texto]" : files.length ? "[archivo sin texto]" : "[mensaje sin texto]"),
-            images,
-            files,
-            timestamp: ctx.message.date,
-            replyToMessageId: ctx.message.reply_to_message?.message_id,
-            mentions: (mentionEntities ?? [])
-                .filter(entity => entity.type === "mention" || entity.type === "text_mention")
-                .map(entity => ({
-                    text: (messageText ?? "").slice(entity.offset, entity.offset + entity.length),
-                    userId: entity.type === "text_mention" ? String(entity.user.id) : null
-                }))
-        })
-
-        const triggeredByPattern = messageText ? matchesGroupTrigger(messageText, groupTriggers) : false
-        const triggeredByMention = messageText
-            ? mentionsBot(messageText, mentionEntities ?? [], ctx.me.id, ctx.me.username)
-            : false
-
-        if (!triggeredByPattern && !triggeredByMention) {
+        if (!isGroupTriggered(ctx)) {
             return
         }
 
@@ -81,22 +156,13 @@ export async function handleGroupMessage(ctx: Filter<Context, "message">): Promi
         const answers = prepareGroupReplies(result.structuredResponse, historySnapshot)
 
         for (const answer of answers) {
-            const reply = await ctx.reply(answer.text, {
-                entities: answer.entities,
-                reply_parameters: answer.replyToMessageId === undefined
-                    ? undefined
-                    : { message_id: answer.replyToMessageId, allow_sending_without_reply: true }
-            })
-            history.addMessage({
-                id: reply.message_id,
-                role: "assistant",
-                senderId: String(ctx.me.id),
-                senderName: ctx.me.first_name,
-                text: answer.text,
-                timestamp: reply.date,
-                replyToMessageId: reply.reply_to_message?.message_id,
-                mentions: answer.mentions
-            })
+            for await (const sent of sendTelegramResponse(ctx, answer)) {
+                history.addMessage(createGroupMessage(ctx, "assistant", {
+                    message: sent.message,
+                    text: sent.text,
+                    mentions: sent.isText ? answer.mentions : []
+                }))
+            }
         }
     } catch (error) {
         log.error({ err: error, chatId }, "Failed to answer Telegram group message")

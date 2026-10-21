@@ -18,8 +18,6 @@
 
 import { Api, Context } from "grammy"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { handleGroupMessage } from "./group.js"
-import { getGroupChatHistory } from "../chat/group.js"
 import { maxAttachmentBytes } from "./attachment.js"
 import { handlePrivateMessage } from "./private.js"
 import { getPrivateChatHistory } from "../chat/chat.js"
@@ -31,8 +29,7 @@ vi.mock("../media/image.js", () => ({
 }))
 
 vi.mock("../agent/agent.js", () => ({
-    createPrivateChatAgent: async () => ({ invoke: invokeMock }),
-    createGroupChatAgent: async () => ({ invoke: invokeMock })
+    createPrivateChatAgent: async () => ({ invoke: invokeMock })
 }))
 
 const me = {
@@ -57,6 +54,35 @@ afterEach(() => {
 })
 
 describe("handlePrivateMessage images", () => {
+    it("sends the original Rule34 URL as a photo in private chats", async () => {
+        const chat = { id: 8101, type: "private" as const, first_name: "Ana" }
+        const ctx = new Context({
+            update_id: 10,
+            message: {
+                message_id: 10, date: 123, chat,
+                from: { id: 1, is_bot: false, first_name: "Ana" },
+                text: "Busca una imagen"
+            }
+        }, new Api("test-token"), me)
+        const media = [{ url: "https://example.com/original.jpg", type: "photo" }]
+        invokeMock.mockResolvedValue({ structuredResponse: { text: "Un pequeño comentario", media } })
+        const reply = vi.spyOn(ctx, "reply").mockResolvedValue({ message_id: 11, date: 124, chat, text: "Un pequeño comentario" })
+        const photo = vi.spyOn(ctx, "replyWithPhoto").mockResolvedValue({
+            message_id: 12, date: 124, chat,
+            photo: [{ file_id: "sent", file_unique_id: "sent", width: 100, height: 100 }]
+        })
+
+        if (!ctx.has("message")) {
+            throw new Error("Expected a message context")
+        }
+
+        await handlePrivateMessage(ctx)
+
+        expect(reply).toHaveBeenCalledWith("Un pequeño comentario")
+        expect(photo).toHaveBeenCalledWith(media[0].url, { reply_parameters: undefined })
+        expect(getPrivateChatHistory(`telegram:${chat.id}`).messages.at(-1)?.content).toBe(media[0].url)
+    })
+
     it("answers a photo without a caption and retains it in the history", async () => {
 
         const chat = { id: 8001, type: "private" as const, first_name: "Ana" }
@@ -72,7 +98,7 @@ describe("handlePrivateMessage images", () => {
         }, api, me)
         const reply = vi.spyOn(ctx, "reply").mockResolvedValue({ message_id: 2, date: 124, chat, text: "Veo una imagen" })
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(new Uint8Array([1, 2, 3]))))
-        invokeMock.mockResolvedValue({ messages: [{ content: "Veo una imagen" }] })
+        invokeMock.mockResolvedValue({ structuredResponse: { text: "Veo una imagen", media: [] } })
 
         if (!ctx.has("message")) {
             throw new Error("Expected a message context")
@@ -90,14 +116,10 @@ describe("handlePrivateMessage images", () => {
 })
 
 it.each([
-    { chatType: "private", mimeType: "application/pdf", size: maxAttachmentBytes + 1 },
-    { chatType: "group", mimeType: "application/pdf", size: maxAttachmentBytes + 1 },
-    { chatType: "private", mimeType: "application/zip", size: 100 },
-    { chatType: "group", mimeType: "application/zip", size: 100 }
-] as const)("silently discards rejected attachments: $chatType, $mimeType, $size", async ({ chatType, mimeType, size }) => {
-    const chat = chatType === "private"
-        ? { id: 8002, type: "private" as const, first_name: "Ana" }
-        : { id: -8002, type: "group" as const, title: "Test group" }
+    { mimeType: "application/pdf", size: maxAttachmentBytes + 1 },
+    { mimeType: "application/zip", size: 100 }
+])("silently discards rejected private attachments: $mimeType, $size", async ({ mimeType, size }) => {
+    const chat = { id: 8002, type: "private" as const, first_name: "Ana" }
     const api = new Api("test-token")
     const getFile = vi.spyOn(api, "getFile")
     const ctx = new Context({
@@ -105,8 +127,7 @@ it.each([
         message: {
             message_id: 2, date: 123, chat,
             from: { id: 1, is_bot: false, first_name: "Ana" },
-            caption: "@nymph_bot revisa este archivo",
-            caption_entities: [{ type: "mention", offset: 0, length: 10 }],
+            caption: "Revisa este archivo",
             document: { file_id: "huge", file_unique_id: "huge", file_size: size, mime_type: mimeType }
         }
     }, api, me)
@@ -116,14 +137,9 @@ it.each([
         throw new Error("Expected a message context")
     }
 
-    if (chatType === "private") {
-        await handlePrivateMessage(ctx)
-        expect(getPrivateChatHistory(`telegram:${chat.id}`).messages).toEqual([])
-    } else {
-        await handleGroupMessage(ctx)
-        expect(getGroupChatHistory(`telegram:${chat.id}`).messages).toEqual([])
-    }
+    await handlePrivateMessage(ctx)
 
+    expect(getPrivateChatHistory(`telegram:${chat.id}`).messages).toEqual([])
     expect(getFile).not.toHaveBeenCalled()
     expect(invokeMock).not.toHaveBeenCalled()
     expect(reply).not.toHaveBeenCalled()
@@ -143,7 +159,7 @@ it("passes a document without a caption to the private chat model", async () => 
     }, api, me)
     vi.spyOn(ctx, "reply").mockResolvedValue({ message_id: 4, date: 124, chat, text: "He leído el documento" })
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(new Uint8Array([1, 2, 3]))))
-    invokeMock.mockResolvedValue({ messages: [{ content: "He leído el documento" }] })
+    invokeMock.mockResolvedValue({ structuredResponse: { text: "He leído el documento", media: [] } })
 
     if (!ctx.has("message")) {
         throw new Error("Expected a message context")

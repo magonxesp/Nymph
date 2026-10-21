@@ -21,6 +21,7 @@ import path from "node:path"
 import { ChatOpenAI } from "@langchain/openai"
 import { createAgent, providerStrategy } from "langchain"
 import { groupResponseSchema } from "../chat/group.js"
+import { privateResponseSchema } from "../chat/response.js"
 import { aiModel, openAIApiKey, promptsDir } from "../env.js"
 import { loadSkills, skills } from "./skill.js"
 import tools from "./tool.js"
@@ -41,8 +42,11 @@ if (!openAIApiKey) {
 log.info({ skills: availableSkills.map(skill => skill.name) }, "Skills loaded")
 
 export async function createPrivateChatAgent() {
+    const privateResponsePrompt = await readFile(path.join(promptsDir, "private-response.md"), "utf8")
+
     const systemPrompt = [
         behaviorSystemPrompt,
+        privateResponsePrompt,
         skillIndex
     ].filter(Boolean).join("\n\n")
 
@@ -57,6 +61,7 @@ export async function createPrivateChatAgent() {
         }),
         tools,
         systemPrompt,
+        responseFormat: providerStrategy({ schema: privateResponseSchema, strict: true }),
     })
 }
 

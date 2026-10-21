@@ -18,12 +18,13 @@
 
 import type { Context, Filter } from "grammy"
 import { createPrivateChatAgent } from "../agent/agent.js"
-import { getAnswer, getContentTypes } from "../agent/response.js"
 import { log } from "../logging.js"
 import { PinoLangChainHandler } from "../agent/logging.js"
 import { getPrivateChatHistory } from "../chat/chat.js"
 import { toModelMessage } from "../chat/message.js"
 import { getTelegramAttachments } from "./attachment.js"
+import { privateResponseSchema } from "../chat/response.js"
+import { sendTelegramResponse } from "./response.js"
 
 const agent = await createPrivateChatAgent()
 
@@ -49,24 +50,15 @@ export async function handlePrivateMessage(ctx: Filter<Context, "message">): Pro
         history.addUserMessage(text ?? placeholder, images, files)
         const messages = history.messages.map(toModelMessage)
         const result = await agent.invoke({ messages }, { callbacks: [new PinoLangChainHandler(chatId)] })
-        const last = result.messages.at(-1)
-        const content = last?.content
-        const answer = getAnswer(content)
+        const answer = privateResponseSchema.parse(result.structuredResponse)
 
-        if (!answer.trim()) {
-            log.warn({
-                chatId,
-                messageType: last?.type,
-                contentTypes: getContentTypes(content),
-                responseMetadata: last?.response_metadata,
-                usageMetadata: last && "usage_metadata" in last ? last.usage_metadata : undefined,
-            }, "Model returned no text")
-
+        if (!answer.text.trim() && answer.media.length === 0) {
             throw new Error("The model returned an empty answer")
         }
 
-        await ctx.reply(answer)
-        history.addAssistantMessage(answer)
+        for await (const sent of sendTelegramResponse(ctx, answer)) {
+            history.addAssistantMessage(sent.text)
+        }
     } catch (error) {
         log.error({ err: error, chatId }, "Failed to answer Telegram message")
         await ctx.reply("No he podido responder ahora. Inténtalo de nuevo en un momento.")

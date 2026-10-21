@@ -20,6 +20,7 @@ import { AIMessage, HumanMessage } from "@langchain/core/messages"
 import { z } from "zod"
 import type { ChatFile } from "./attachment.js"
 import { toHumanMessage } from "./message.js"
+import { responseMediaListSchema } from "./response.js"
 
 export type GroupMention = {
     text: string
@@ -41,6 +42,7 @@ export type GroupMessage = {
 
 const groupResponseMessageSchema = z.object({
     text: z.string().describe("Texto de la respuesta, sin Markdown ni HTML"),
+    media: responseMediaListSchema,
     replyToMessageId: z.number().int().nullable().describe("Por defecto null. ID de un mensaje del historial solo para distinguir hilos entre muchos mensajes o aclarar una respuesta específica que sería ambigua sin cita"),
     mentionUserIds: z.array(z.string()).describe("IDs de usuarios del historial a los que mencionar; vacío si no es necesario")
 }).strict()

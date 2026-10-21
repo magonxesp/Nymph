@@ -28,7 +28,7 @@ export function prepareGroupReplies(value: unknown, history: GroupMessage[]) {
 
 function prepareGroupReply(response: GroupResponse["messages"][number], history: GroupMessage[]) {
 
-    if (!response.text.trim()) {
+    if (!response.text.trim() && response.media.length === 0) {
         throw new Error("The model returned an empty group answer")
     }
 
@@ -60,6 +60,7 @@ function prepareGroupReply(response: GroupResponse["messages"][number], history:
 
     return {
         text,
+        media: response.media,
         entities,
         mentions,
         replyToMessageId: replyToMessageId ?? undefined

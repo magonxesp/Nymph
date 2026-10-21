@@ -26,25 +26,49 @@ const history: GroupMessage[] = [
 ]
 
 describe("prepareGroupReplies", () => {
-    it("supports a single plain text message", () => {
+    it("preserves original media URLs and allows a response without text", () => {
+        const media = [{ url: "https://example.com/image.jpg", type: "photo" }]
         const replies = prepareGroupReplies({ messages: [
-            { text: "Hola", replyToMessageId: null, mentionUserIds: [] }
+            { text: "", media, replyToMessageId: 10, mentionUserIds: [] }
         ] }, history)
 
         expect(replies).toEqual([
-            { text: "Hola", entities: [], mentions: [], replyToMessageId: undefined }
+            { text: "", media, entities: [], mentions: [], replyToMessageId: 10 }
+        ])
+    })
+
+    it("rejects base64 media before sending the batch", () => {
+        expect(() => prepareGroupReplies({ messages: [
+            { text: "Hola", media: [], replyToMessageId: null, mentionUserIds: [] },
+            {
+                text: "",
+                media: [{ url: "data:image/png;base64,AQID", type: "photo" }],
+                replyToMessageId: null,
+                mentionUserIds: []
+            }
+        ] }, history)).toThrow()
+    })
+
+    it("supports a single plain text message", () => {
+        const replies = prepareGroupReplies({ messages: [
+            { media: [], text: "Hola", replyToMessageId: null, mentionUserIds: [] }
+        ] }, history)
+
+        expect(replies).toEqual([
+            { media: [], text: "Hola", entities: [], mentions: [], replyToMessageId: undefined }
         ])
     })
 
     it("preserves message order and independent quotes and mentions with UTF-16 offsets", () => {
         const replies = prepareGroupReplies({ messages: [
-            { text: "¿Qué opináis?", replyToMessageId: 10, mentionUserIds: ["123", "456", "123"] },
-            { text: "Os cuento otra cosa.", replyToMessageId: null, mentionUserIds: [] },
-            { text: "Y tú, ¿qué dices?", replyToMessageId: 11, mentionUserIds: ["456"] }
+            { media: [], text: "¿Qué opináis?", replyToMessageId: 10, mentionUserIds: ["123", "456", "123"] },
+            { media: [], text: "Os cuento otra cosa.", replyToMessageId: null, mentionUserIds: [] },
+            { media: [], text: "Y tú, ¿qué dices?", replyToMessageId: 11, mentionUserIds: ["456"] }
         ] }, history)
 
         expect(replies).toEqual([
             {
+                media: [],
                 text: "Ana 🦋 Luis ¿Qué opináis?",
                 entities: [
                     { type: "text_link", offset: 0, length: 6, url: "tg://user?id=123" },
@@ -53,8 +77,9 @@ describe("prepareGroupReplies", () => {
                 mentions: [{ text: "Ana 🦋", userId: "123" }, { text: "Luis", userId: "456" }],
                 replyToMessageId: 10
             },
-            { text: "Os cuento otra cosa.", entities: [], mentions: [], replyToMessageId: undefined },
+            { media: [], text: "Os cuento otra cosa.", entities: [], mentions: [], replyToMessageId: undefined },
             {
+                media: [],
                 text: "Luis Y tú, ¿qué dices?",
                 entities: [{ type: "text_link", offset: 0, length: 4, url: "tg://user?id=456" }],
                 mentions: [{ text: "Luis", userId: "456" }],
@@ -65,11 +90,11 @@ describe("prepareGroupReplies", () => {
 
     it("rejects the whole batch if a later message references an unknown message or user", () => {
         expect(() => prepareGroupReplies({ messages: [
-            { text: "Hola", replyToMessageId: null, mentionUserIds: [] },
-            { text: "Otra cosa", replyToMessageId: 999, mentionUserIds: [] }
+            { media: [], text: "Hola", replyToMessageId: null, mentionUserIds: [] },
+            { media: [], text: "Otra cosa", replyToMessageId: 999, mentionUserIds: [] }
         ] }, history)).toThrow("outside the group history")
         expect(() => prepareGroupReplies({ messages: [
-            { text: "Hola", replyToMessageId: null, mentionUserIds: ["999"] }
+            { media: [], text: "Hola", replyToMessageId: null, mentionUserIds: ["999"] }
         ] }, history)).toThrow("unknown group user")
     })
 
@@ -77,11 +102,11 @@ describe("prepareGroupReplies", () => {
         expect(() => prepareGroupReplies(undefined, history)).toThrow()
         expect(() => prepareGroupReplies({ messages: [] }, history)).toThrow()
         expect(() => prepareGroupReplies({ messages: [
-            { text: "Hola", replyToMessageId: "10", mentionUserIds: [] }
+            { media: [], text: "Hola", replyToMessageId: "10", mentionUserIds: [] }
         ] }, history)).toThrow()
         expect(() => prepareGroupReplies({ messages: [
-            { text: "Hola", replyToMessageId: null, mentionUserIds: [] },
-            { text: "  ", replyToMessageId: null, mentionUserIds: [] }
+            { media: [], text: "Hola", replyToMessageId: null, mentionUserIds: [] },
+            { media: [], text: "  ", replyToMessageId: null, mentionUserIds: [] }
         ] }, history)).toThrow("empty group answer")
     })
 
@@ -91,7 +116,7 @@ describe("prepareGroupReplies", () => {
         ]
 
         expect(() => prepareGroupReplies({ messages: [
-            { text: "Hola", replyToMessageId: null, mentionUserIds: ["-100123"] }
+            { media: [], text: "Hola", replyToMessageId: null, mentionUserIds: ["-100123"] }
         ] }, channelHistory)).toThrow("unknown group user")
     })
 })
