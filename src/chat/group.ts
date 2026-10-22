@@ -22,6 +22,9 @@ import type { ChatFile } from "./attachment.js"
 import { toModelMessage } from "./message.js"
 import { responseMediaListSchema } from "./response.js"
 import { ChatHistory } from "./history.js"
+import {createGroupMessage, GroupMessageContext, GroupMessageOptions} from "../telegram/group-message.js";
+import {downloadImages} from "../media/remote.js";
+import {log} from "../logging.js";
 
 export type GroupMention = {
     text: string
