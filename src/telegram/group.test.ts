@@ -24,6 +24,10 @@ import { maxAttachmentBytes } from "./attachment.js"
 
 const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }))
 
+vi.mock("../media/image.js", () => ({
+    resizeImage: async (bytes: Buffer) => bytes
+}))
+
 vi.mock("../agent/agent.js", () => ({
     createGroupChatAgent: async () => ({ invoke: invokeMock })
 }))
@@ -99,6 +103,9 @@ describe("handleGroupMessage images", () => {
             }
         }, new Api("test-token"), me)
         const media = [{ url: "https://example.com/original.jpg", type: "photo" }]
+        vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => new Response(new Uint8Array([1, 2, 3]), {
+            headers: { "content-type": "image/jpeg" }
+        })))
         invokeMock.mockResolvedValue({ structuredResponse: {
             messages: [{ text: "Un pequeño comentario", media, replyToMessageId: 10, mentionUserIds: ["1"] }]
         } })
@@ -122,6 +129,14 @@ describe("handleGroupMessage images", () => {
             reply_parameters: { message_id: 10, allow_sending_without_reply: true }
         })
         expect(getGroupChatHistory(`telegram:${chat.id}`).messages.at(-1)?.text).toBe(media[0].url)
+        expect(getGroupChatHistory(`telegram:${chat.id}`).messages.at(-1)?.images).toEqual(["data:image/jpeg;base64,AQID"])
+
+        await handleGroupMessage(ctx)
+
+        expect(invokeMock.mock.calls[1][0].messages[2].content).toEqual([
+            { type: "text", text: expect.stringContaining("Contenido multimedia enviado por el asistente:") },
+            { type: "image_url", image_url: { url: "data:image/jpeg;base64,AQID" } }
+        ])
     })
 })
 

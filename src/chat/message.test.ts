@@ -34,6 +34,17 @@ describe("toModelMessage", () => {
         expect(message).toBeInstanceOf(AIMessage)
         expect(message.content).toBe("Hola")
     })
+
+    it("includes downloaded assistant images with explicit attribution", () => {
+        const image = "data:image/png;base64,AQID"
+        const message = toModelMessage({ role: "assistant", content: "https://example.com/image.png", images: [image] })
+
+        expect(message).toBeInstanceOf(HumanMessage)
+        expect(message.content).toEqual([
+            { type: "text", text: "Contenido multimedia enviado por el asistente: https://example.com/image.png" },
+            { type: "image_url", image_url: { url: image } }
+        ])
+    })
 })
 
 it("sends the caption and image together as multimodal content", () => {

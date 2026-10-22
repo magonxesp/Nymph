@@ -17,9 +17,30 @@
  */
 
 import { BaseCallbackHandler } from "@langchain/core/callbacks/base"
+import type { LLMResult } from "@langchain/core/outputs"
 import { log } from "../logging.js"
 
-// Do not log prompts, tool arguments or model output: Telegram messages can contain private data.
+function getReasoning(content: unknown): string[] {
+    if (!Array.isArray(content)) {
+        return []
+    }
+
+    return content.flatMap((block: unknown) => {
+        if (typeof block !== "object" || block === null) {
+            return []
+        }
+
+        const isReasoning = "type" in block && block.type === "reasoning"
+        const reasoning = "reasoning" in block ? block.reasoning : undefined
+
+        if (isReasoning && typeof reasoning === "string" && reasoning.trim()) {
+            return [reasoning]
+        }
+
+        return []
+    })
+}
+
 export class PinoLangChainHandler extends BaseCallbackHandler {
     name = "pino_langchain"
 
@@ -31,7 +52,23 @@ export class PinoLangChainHandler extends BaseCallbackHandler {
         log.debug({ chatId: this.chatId, runId }, "LangChain model started")
     }
 
-    handleLLMEnd(_output: unknown, runId: string): void {
+    handleLLMEnd(output: LLMResult, runId: string): void {
+        for (const generation of output.generations.flat()) {
+            if (!("message" in generation)) {
+                continue
+            }
+
+            const message: unknown = generation.message
+
+            if (typeof message !== "object" || message === null || !("content" in message)) {
+                continue
+            }
+
+            for (const reasoning of getReasoning(message.content)) {
+                log.debug({ chatId: this.chatId, runId, reasoning }, "LangChain model reasoning")
+            }
+        }
+
         log.debug({ chatId: this.chatId, runId }, "LangChain model finished")
     }
 

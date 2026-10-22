@@ -69,19 +69,7 @@ export const rule34RandomPost = tool(
                 return `No se encontraron posts para el tag ${input.tag}.`
             }
 
-            let images: string[] = []
-
-            try {
-                images = await downloadImages(post.file_url)
-            } catch (error) {
-                log.warn({ error, tool: 'rule34_random_post', input }, "Download rule34 image failed")
-                return [{ type: "text", text: post.file_url }]
-            }
-
-            return [
-                { type: "text", text: post.file_url },
-                ...images.map(url => ({ type: "image_url", image_url: { url } }))
-            ]
+            return post.file_url
         } catch (error) {
             log.warn({ error, tool: 'rule34_random_post', input }, "Rule34 random post search failed")
             return { error: error instanceof Error ? error.message : String(error) }
@@ -94,11 +82,35 @@ export const rule34RandomPost = tool(
     }
 )
 
+export const rule34Posts = tool(
+    async (input) => {
+        try {
+            return await rule34Client.getPosts(input.tag, {
+                page: input.page,
+                limit: input.limit
+            })
+        } catch (error) {
+            log.warn({ error, tool: 'rule34_posts', input }, "Rule34 post search failed")
+            return { error: error instanceof Error ? error.message : String(error) }
+        }
+    },
+    {
+        name: "rule34_posts",
+        description: "Devuelve un array de posts de Rule34 que tenga el tag indicado.",
+        schema: z.object({
+            tag: z.string().min(1).describe("Tag de Rule34 usado para buscar el post"),
+            page: z.number().min(0).describe("Numero de la pagina del dataset de los posts"),
+            limit: z.number().min(1).max(15).describe("Limite de la cantidad de posts que pueden haver en cada pagina"),
+        }),
+    }
+)
+
 const tools = [
     getSkill,
     readTextFile,
     rule34AutocompleteTags,
-    rule34RandomPost
+    rule34RandomPost,
+    rule34Posts
 ]
 
 export default tools

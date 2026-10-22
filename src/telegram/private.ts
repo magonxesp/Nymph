@@ -57,7 +57,8 @@ export async function handlePrivateMessage(ctx: Filter<Context, "message">): Pro
         }
 
         for await (const sent of sendTelegramResponse(ctx, answer)) {
-            history.addAssistantMessage(sent.text)
+            log.trace({ sent, chatId }, "Sent assistant message")
+            await history.addAssistantMessage(sent.text, sent.isText ? undefined : sent.text)
         }
     } catch (error) {
         log.error({ err: error, chatId }, "Failed to answer Telegram message")

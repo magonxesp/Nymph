@@ -65,6 +65,9 @@ describe("handlePrivateMessage images", () => {
             }
         }, new Api("test-token"), me)
         const media = [{ url: "https://example.com/original.jpg", type: "photo" }]
+        vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => new Response(new Uint8Array([1, 2, 3]), {
+            headers: { "content-type": "image/jpeg" }
+        })))
         invokeMock.mockResolvedValue({ structuredResponse: { text: "Un pequeño comentario", media } })
         const reply = vi.spyOn(ctx, "reply").mockResolvedValue({ message_id: 11, date: 124, chat, text: "Un pequeño comentario" })
         const photo = vi.spyOn(ctx, "replyWithPhoto").mockResolvedValue({
@@ -81,6 +84,14 @@ describe("handlePrivateMessage images", () => {
         expect(reply).toHaveBeenCalledWith("Un pequeño comentario")
         expect(photo).toHaveBeenCalledWith(media[0].url, { reply_parameters: undefined })
         expect(getPrivateChatHistory(`telegram:${chat.id}`).messages.at(-1)?.content).toBe(media[0].url)
+        expect(getPrivateChatHistory(`telegram:${chat.id}`).messages.at(-1)?.images).toEqual(["data:image/jpeg;base64,AQID"])
+
+        await handlePrivateMessage(ctx)
+
+        expect(invokeMock.mock.calls[1][0].messages[2].content).toEqual([
+            { type: "text", text: `Contenido multimedia enviado por el asistente: ${media[0].url}` },
+            { type: "image_url", image_url: { url: "data:image/jpeg;base64,AQID" } }
+        ])
     })
 
     it("answers a photo without a caption and retains it in the history", async () => {

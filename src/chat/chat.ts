@@ -41,10 +41,21 @@ export class PrivateChatHistory extends ChatHistory<ChatMessage> {
         })
     }
 
-    public addAssistantMessage(content: string) {
+    public async addAssistantMessage(content: string, mediaUrl?: string): Promise<void> {
+        let images: string[] = []
+
+        if (mediaUrl) {
+            try {
+                images = await downloadImages(mediaUrl)
+            } catch (error) {
+                log.warn({ err: error, chatId: this.chatId }, 'Failed to download assistant media for chat history')
+            }
+        }
+
         this.addMessage({
             role: "assistant",
-            content
+            content,
+            ...(images.length ? { images } : {})
         })
     }
 }
