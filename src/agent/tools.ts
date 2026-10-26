@@ -21,8 +21,8 @@ import { skills } from "./skill.js";
 import z from "zod";
 import fs from "node:fs/promises"
 import { Rule34Client } from "../booru.js"
-import { downloadImages } from "../media/remote.js"
 import { log } from '../logging.js'
+import { memoryTools } from "../memory/tools.js"
 
 const rule34Client = new Rule34Client()
 
@@ -110,7 +110,8 @@ const tools = [
     readTextFile,
     rule34AutocompleteTags,
     rule34RandomPost,
-    rule34Posts
+    rule34Posts,
+    ...memoryTools
 ]
 
 export default tools

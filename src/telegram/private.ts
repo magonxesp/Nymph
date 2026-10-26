@@ -48,8 +48,17 @@ export async function handlePrivateMessage(ctx: Filter<Context, "message">): Pro
 
         const placeholder = images.length ? "[imagen sin texto]" : "[archivo sin texto]"
         history.addUserMessage(text ?? placeholder, images, files)
-        const messages = history.messages.map(toModelMessage)
-        const result = await agent.invoke({ messages }, { callbacks: [new PinoLangChainHandler(chatId)] })
+        const historySnapshot = history.messages
+        const messages = historySnapshot.map(toModelMessage)
+        const result = await agent.invoke({ messages }, {
+            callbacks: [new PinoLangChainHandler(chatId)],
+            configurable: {
+                chat: {
+                    id: history.chatId.value,
+                    type: "private"
+                }
+            }
+        })
         const answer = privateResponseSchema.parse(result.structuredResponse)
 
         if (!answer.text.trim() && answer.media.length === 0) {

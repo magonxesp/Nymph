@@ -29,7 +29,7 @@ vi.mock("../media/image.js", () => ({
 }))
 
 vi.mock("../agent/agent.js", () => ({
-    createGroupChatAgent: async () => ({ invoke: invokeMock })
+    createGroupChatAgent: vi.fn(async () => ({ invoke: invokeMock }))
 }))
 
 const me = {
@@ -121,6 +121,9 @@ describe("handleGroupMessage images", () => {
 
         await handleGroupMessage(ctx)
 
+        expect(invokeMock.mock.calls[0][1].configurable).toEqual({
+            chat: { id: `telegram:${chat.id}`, type: "group" }
+        })
         expect(reply).toHaveBeenCalledWith("Ana Un pequeño comentario", {
             entities: [{ type: "text_link", offset: 0, length: 3, url: "tg://user?id=1" }],
             reply_parameters: { message_id: 10, allow_sending_without_reply: true }

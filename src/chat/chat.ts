@@ -17,6 +17,9 @@
  */
 import type { ChatFile } from "./attachment.js"
 import { ChatHistory } from "./history.js"
+import { ChatId } from "./id.js"
+import { downloadImages } from "../media/remote.js"
+import { log } from "../logging.js"
 
 export type ChatMessage = {
     role: 'assistant' | 'user'
@@ -28,8 +31,8 @@ export type ChatMessage = {
 export class PrivateChatHistory extends ChatHistory<ChatMessage> {
     public static readonly messageCountLimit = 100
 
-    public constructor() {
-        super(PrivateChatHistory.messageCountLimit)
+    public constructor(chatId: ChatId) {
+        super(chatId, PrivateChatHistory.messageCountLimit)
     }
 
     public addUserMessage(content: string, images?: string[], files?: ChatFile[]) {
@@ -48,7 +51,7 @@ export class PrivateChatHistory extends ChatHistory<ChatMessage> {
             try {
                 images = await downloadImages(mediaUrl)
             } catch (error) {
-                log.warn({ err: error, chatId: this.chatId }, 'Failed to download assistant media for chat history')
+                log.warn({ err: error }, 'Failed to download assistant media for chat history')
             }
         }
 
@@ -69,7 +72,7 @@ export function getPrivateChatHistory(chatId: string): PrivateChatHistory {
         return existingHistory
     }
 
-    const history = new PrivateChatHistory()
+    const history = new PrivateChatHistory(new ChatId(chatId))
     privateChatHistories.set(chatId, history)
 
     return history

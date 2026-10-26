@@ -22,10 +22,12 @@ import { ChatOpenAI } from "@langchain/openai"
 import { createAgent, providerStrategy } from "langchain"
 import { groupResponseSchema } from "../chat/group.js"
 import { privateResponseSchema } from "../chat/response.js"
-import { aiModel, openAIApiKey, promptsDir } from "../env.js"
+import { chatModel, openAIApiKey, promptsDir } from "../env.js"
 import { loadSkills, skills } from "./skill.js"
-import tools from "./tool.js"
+import tools from "./tools.js"
 import { log } from "../logging.js"
+
+export { createMemoryAgent } from "./memory.js"
 
 const behaviorSystemPrompt = await readFile(path.join(promptsDir, "behavior.md"), "utf8")
 const availableSkills = await loadSkills()
@@ -55,9 +57,12 @@ export async function createPrivateChatAgent() {
     return createAgent({
         model: new ChatOpenAI({
             apiKey: openAIApiKey,
-            model: aiModel,
+            model: chatModel,
             useResponsesApi: true,
-            reasoning: { summary: "auto" },
+            reasoning: {
+                effort: "low",
+                summary: "auto"
+            },
             verbosity: "low"
         }),
         tools,
@@ -80,9 +85,12 @@ export async function createGroupChatAgent() {
     return createAgent({
         model: new ChatOpenAI({
             apiKey: openAIApiKey,
-            model: aiModel,
+            model: chatModel,
             useResponsesApi: true,
-            reasoning: { summary: "auto" },
+            reasoning: {
+                effort: "low",
+                summary: "auto"
+            },
             verbosity: "low"
         }),
         tools,

@@ -21,7 +21,9 @@ import { z } from "zod"
 import type { ChatFile } from "./attachment.js"
 import { toModelMessage } from "./message.js"
 import { responseMediaListSchema } from "./response.js"
+import type { ResponseMedia } from "./response.js"
 import { ChatHistory } from "./history.js"
+import { ChatId } from "./id.js"
 import {createGroupMessage, GroupMessageContext, GroupMessageOptions} from "../telegram/group-message.js";
 import {downloadImages} from "../media/remote.js";
 import {log} from "../logging.js";
@@ -53,15 +55,22 @@ const groupResponseMessageSchema = z.object({
 
 export const groupResponseSchema = z.object({
     messages: z.array(groupResponseMessageSchema).min(1).describe("Mensajes breves en orden de envío; usa tantos como necesites para responder con naturalidad")
-}).strict()
+}).strict() satisfies z.ZodType<GroupResponse>
 
-export type GroupResponse = z.infer<typeof groupResponseSchema>
+export type GroupResponse = {
+    messages: {
+        text: string
+        media: ResponseMedia[]
+        replyToMessageId: number | null
+        mentionUserIds: string[]
+    }[]
+}
 
 export class GroupChatHistory extends ChatHistory<GroupMessage> {
     public static readonly messageCountLimit = 100
 
-    public constructor() {
-        super(GroupChatHistory.messageCountLimit)
+    public constructor(chatId: ChatId) {
+        super(chatId, GroupChatHistory.messageCountLimit)
     }
 
     public toModelMessages(triggerMessageId: number): (HumanMessage | AIMessage)[] {
@@ -121,7 +130,7 @@ export function getGroupChatHistory(chatId: string): GroupChatHistory {
         return existingHistory
     }
 
-    const history = new GroupChatHistory()
+    const history = new GroupChatHistory(new ChatId(chatId))
     groupChatHistories.set(chatId, history)
 
     return history

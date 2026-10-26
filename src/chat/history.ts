@@ -17,8 +17,10 @@
  */
 
 import { EventEmitter } from "node:events"
+import type { ChatId } from "./id.js"
 
 export type ChatHistorySnapshot<Message> = {
+    chatId: ChatId
     messages: Message[]
     lastMessageSequence: number
 }
@@ -30,7 +32,7 @@ export class ChatHistory<Message> extends EventEmitter<{
     private messageSequence = 0
     private lastSnapshotMessageSequence = 0
 
-    protected constructor(private readonly messageCountLimit: number) {
+    protected constructor(public readonly chatId: ChatId, private readonly messageCountLimit: number) {
         super()
     }
 
@@ -45,13 +47,18 @@ export class ChatHistory<Message> extends EventEmitter<{
         const newMessageCount = this.messageSequence - this.lastSnapshotMessageSequence
 
         if (newMessageCount >= this.messageCountLimit) {
-            const snapshot: ChatHistorySnapshot<Message> = {
-                messages: structuredClone(this._messages),
-                lastMessageSequence: this.messageSequence
-            }
+            const snapshot = this.snapshot
 
             this.lastSnapshotMessageSequence = this.messageSequence
             this.emit("snapshot", snapshot)
+        }
+    }
+
+    public get snapshot(): ChatHistorySnapshot<Message> {
+        return {
+            chatId: this.chatId,
+            messages: structuredClone(this._messages),
+            lastMessageSequence: this.messageSequence
         }
     }
 

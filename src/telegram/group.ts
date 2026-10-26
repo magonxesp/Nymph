@@ -31,6 +31,7 @@ import { getTelegramAttachments } from "./attachment.js"
 import { sendTelegramResponse } from "./response.js"
 
 const groupTriggers = compileGroupTriggers(await readFile(path.join(rootDir, "group-triggers.txt"), "utf8"))
+
 const agent = await createGroupChatAgent()
 
 function isGroupTriggered(ctx: Filter<Context, "message">): boolean {
@@ -72,7 +73,15 @@ export async function handleGroupMessage(ctx: Filter<Context, "message">): Promi
 
         const historySnapshot = history.messages
         const messages = history.toModelMessages(ctx.message.message_id)
-        const result = await agent.invoke({ messages }, { callbacks: [new PinoLangChainHandler(chatId)] })
+        const result = await agent.invoke({ messages }, {
+            callbacks: [new PinoLangChainHandler(chatId)],
+            configurable: {
+                chat: {
+                    id: history.chatId.value,
+                    type: "group"
+                }
+            }
+        })
         const answers = prepareGroupReplies(result.structuredResponse, historySnapshot)
 
         for (const answer of answers) {

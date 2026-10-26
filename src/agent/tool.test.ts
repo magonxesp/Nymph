@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { Rule34Client } from "../booru.js"
-import { rule34AutocompleteTags, rule34RandomPost } from "./tool.js"
+import { rule34AutocompleteTags, rule34RandomPost } from "./tools.js"
 import { downloadImages } from "../media/remote.js"
 import { AIMessage, ToolMessage } from "@langchain/core/messages"
 import { ChatOpenAI } from "@langchain/openai"

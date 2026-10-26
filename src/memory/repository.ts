@@ -36,6 +36,15 @@ export type MemorySearchResult = {
     distance: number
 }
 
+type MemoryRow = {
+    id: string
+    chat_id: string
+    content: string
+    embedding: number[] | null
+    created_at: Date
+    updated_at: Date
+}
+
 const memoryRowSchema = z.object({
     id: z.string(),
     chat_id: z.string(),
@@ -45,7 +54,7 @@ const memoryRowSchema = z.object({
         .pipe(z.array(z.number()).nullable()),
     created_at: z.date(),
     updated_at: z.date()
-})
+}) satisfies z.ZodType<MemoryRow>
 
 const searchResultRowSchema = memoryRowSchema.extend({
     distance: z.number()
@@ -53,7 +62,7 @@ const searchResultRowSchema = memoryRowSchema.extend({
 
 const searchLimitSchema = z.number().int().positive()
 
-function toMemory(memory: z.infer<typeof memoryRowSchema>): Memory {
+function toMemory(memory: MemoryRow): Memory {
     return new Memory({
         id: memory.id,
         chatId: memory.chat_id,
@@ -66,6 +75,25 @@ function toMemory(memory: z.infer<typeof memoryRowSchema>): Memory {
 
 export class MemoryRepository {
     public constructor(private readonly connection: Knex = database) {}
+
+    public async insertMany(chatId: ChatId, inputs: MemoryInput[]): Promise<Memory[]> {
+        if (inputs.length === 0) {
+            return []
+        }
+
+        const now = new Date()
+        const rows: unknown[] = await this.connection("chat_memories")
+            .insert(inputs.map(input => ({
+                chat_id: chatId.value,
+                content: input.content.value,
+                embedding: pgvector.toSql([...input.embedding.value]),
+                created_at: now,
+                updated_at: now
+            })))
+            .returning("*")
+
+        return rows.map(row => toMemory(memoryRowSchema.parse(row)))
+    }
 
     public async insert(chatId: ChatId, input: MemoryInput): Promise<Memory> {
         const now = new Date()

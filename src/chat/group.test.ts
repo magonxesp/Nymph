@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { ChatId } from "./id.js"
 import { AIMessage, HumanMessage } from "@langchain/core/messages"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { GroupChatHistory, getGroupChatHistory } from "./group.js"
@@ -44,7 +45,7 @@ describe("GroupChatHistory", () => {
     }
 
     it("stores assistant text without downloading media", async () => {
-        const history = new GroupChatHistory()
+        const history = new GroupChatHistory(new ChatId("telegram:group-test"))
 
         await history.addAssistantMessage(ctx, { message: sentMessage, text: "Hola" })
 
@@ -57,7 +58,7 @@ describe("GroupChatHistory", () => {
     })
 
     it("downloads assistant media and keeps it visible in later model requests", async () => {
-        const history = new GroupChatHistory()
+        const history = new GroupChatHistory(new ChatId("telegram:group-test"))
         const image = "data:image/jpeg;base64,AQID"
         const url = "https://example.com/image.jpg"
         vi.mocked(downloadImages).mockResolvedValue([image])
@@ -76,7 +77,7 @@ describe("GroupChatHistory", () => {
     })
 
     it("keeps the sent message when downloading assistant media fails", async () => {
-        const history = new GroupChatHistory()
+        const history = new GroupChatHistory(new ChatId("telegram:group-test"))
         const url = "https://example.com/image.jpg"
         vi.mocked(downloadImages).mockRejectedValue(new Error("Download failed"))
 
@@ -89,7 +90,7 @@ describe("GroupChatHistory", () => {
     })
 
     it("keeps only the latest 100 messages, including the trigger", () => {
-        const history = new GroupChatHistory()
+        const history = new GroupChatHistory(new ChatId("telegram:group-test"))
 
         for (let id = 1; id <= 101; id++) {
             history.addMessage({ id, role: "user", senderId: "1", senderName: "Ana", text: `Message ${id}`, timestamp: id })
@@ -109,7 +110,7 @@ describe("GroupChatHistory", () => {
     })
 
     it("preserves sender details and special characters as JSON data", () => {
-        const history = new GroupChatHistory()
+        const history = new GroupChatHistory(new ChatId("telegram:group-test"))
         history.addMessage({
             id: 5,
             role: "user",
@@ -134,7 +135,7 @@ describe("GroupChatHistory", () => {
     })
 
     it("maps Nymph to assistant messages and preserves reply and mention relationships", () => {
-        const history = new GroupChatHistory()
+        const history = new GroupChatHistory(new ChatId("telegram:group-test"))
         history.addMessage({
             id: 6,
             role: "assistant",
@@ -172,7 +173,7 @@ describe("GroupChatHistory", () => {
 })
 
 it("keeps earlier group images available when a later message triggers a response", () => {
-    const history = new GroupChatHistory()
+    const history = new GroupChatHistory(new ChatId("telegram:group-test"))
     const image = "data:image/jpeg;base64,AQID"
     history.addMessage({
         id: 1, role: "user", senderId: "1", senderName: "Ana",
@@ -195,7 +196,7 @@ it("keeps earlier group images available when a later message triggers a respons
 })
 
 it("keeps files attached to earlier group messages available to the model", () => {
-    const history = new GroupChatHistory()
+    const history = new GroupChatHistory(new ChatId("telegram:group-test"))
     history.addMessage({
         id: 1, role: "user", senderId: "1", senderName: "Ana",
         text: "Revisa esto", timestamp: 1,

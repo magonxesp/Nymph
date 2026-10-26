@@ -16,8 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { describe, expect, it } from "vitest"
-import { Memory } from "./memory.js"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { Memory, generateMemories } from "./memory.js"
+import type { MemoryHistoryMessage } from "./history.js"
+import { MemoryContent } from "./content.js"
+import { Embedding, embedMemoryTexts } from "./embedding.js"
+import * as embeddingModule from "./embedding.js"
 import type { MemoryObject } from "./memory.js"
 
 const data: MemoryObject = {
@@ -74,5 +78,90 @@ describe("Memory", () => {
         expect(memory.embedding?.value).toEqual([1, 0, 0])
         expect(memory.createdAt).toEqual(data.createdAt)
         expect(memory.updatedAt).toEqual(data.updatedAt)
+    })
+})
+
+const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }))
+
+vi.mock("../agent/memory.js", () => ({
+    createMemoryAgent: vi.fn(async () => ({ invoke: invokeMock }))
+}))
+
+const history: MemoryHistoryMessage[] = [
+    { role: "user", text: "El proyecto se llama Nymph." }
+]
+
+describe("generateMemories", () => {
+    beforeEach(() => {
+        vi.clearAllMocks()
+        invokeMock.mockResolvedValue({ structuredResponse: { memories: ["El proyecto se llama Nymph."] } })
+        vi.spyOn(embeddingModule, "embedMemoryTexts").mockResolvedValue([new Embedding([1, 0, 0])])
+    })
+
+    afterEach(() => {
+        vi.restoreAllMocks()
+    })
+
+    it("passes the JSON history and focus to the agent and returns text with its embedding", async () => {
+        const config = { tags: ["memory-test"] }
+        const memories = await generateMemories(history, "proyecto", config)
+
+        expect(invokeMock).toHaveBeenCalledWith({
+            messages: [{
+                role: "user",
+                content: JSON.stringify({ focus: "proyecto", messages: history })
+            }]
+        }, config)
+        expect(embedMemoryTexts).toHaveBeenCalledWith(["El proyecto se llama Nymph."])
+        expect(memories).toEqual([{
+            content: new MemoryContent("El proyecto se llama Nymph."),
+            embedding: new Embedding([1, 0, 0])
+        }])
+    })
+
+    it("skips both models for an empty history", async () => {
+        expect(await generateMemories([])).toEqual([])
+        expect(invokeMock).not.toHaveBeenCalled()
+        expect(embedMemoryTexts).not.toHaveBeenCalled()
+    })
+
+    it("skips embeddings when the agent finds nothing worth remembering", async () => {
+        invokeMock.mockResolvedValue({ structuredResponse: { memories: [] } })
+
+        expect(await generateMemories(history)).toEqual([])
+        expect(embedMemoryTexts).not.toHaveBeenCalled()
+    })
+
+    it("deduplicates memories and preserves each embedding's correspondence in a batch", async () => {
+        invokeMock.mockResolvedValue({ structuredResponse: { memories: ["Nymph", "Nymph", "Miku"] } })
+        vi.mocked(embedMemoryTexts).mockResolvedValue([
+            new Embedding([1, 0]), new Embedding([0, 1])
+        ])
+
+        const memories = await generateMemories(history)
+
+        expect(embedMemoryTexts).toHaveBeenCalledExactlyOnceWith(["Nymph", "Miku"])
+        expect(memories.map(memory => ({ content: memory.content.value, embedding: memory.embedding.value })))
+            .toEqual([{ content: "Nymph", embedding: [1, 0] }, { content: "Miku", embedding: [0, 1] }])
+    })
+
+    it("rejects an invalid agent response before generating embeddings", async () => {
+        invokeMock.mockResolvedValue({ structuredResponse: { memories: [""] } })
+
+        await expect(generateMemories(history)).rejects.toThrow()
+        expect(embedMemoryTexts).not.toHaveBeenCalled()
+    })
+
+    it("rejects blank memory content before generating embeddings", async () => {
+        invokeMock.mockResolvedValue({ structuredResponse: { memories: [" "] } })
+
+        await expect(generateMemories(history)).rejects.toThrow("blank")
+        expect(embedMemoryTexts).not.toHaveBeenCalled()
+    })
+
+    it("propagates embedding failures instead of returning incomplete memories", async () => {
+        vi.mocked(embedMemoryTexts).mockRejectedValue(new Error("Embedding unavailable"))
+
+        await expect(generateMemories(history)).rejects.toThrow("Embedding unavailable")
     })
 })

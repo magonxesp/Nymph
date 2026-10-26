@@ -16,9 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import type { RunnableConfig } from "@langchain/core/runnables"
+import { createMemoryAgent } from "../agent/memory.js"
+import type { MemoryHistoryMessage } from "./history.js"
+import { memoryResponseSchema } from "./response.js"
 import { ChatId } from "../chat/id.js"
 import { MemoryContent } from "./content.js"
-import { Embedding } from "./embedding.js"
+import { Embedding, embedMemoryTexts } from "./embedding.js"
 import { MemoryId } from "./id.js"
 
 export type MemoryObject = {
@@ -54,5 +58,40 @@ export class Memory {
             throw new Error("The memory update date must be valid")
         }
     }
+}
 
+export type GeneratedMemory = {
+    content: MemoryContent
+    embedding: Embedding
+}
+
+let memoryAgent: ReturnType<typeof createMemoryAgent> | undefined
+
+export async function generateMemories(
+    history: MemoryHistoryMessage[],
+    focus: string | null = null,
+    config?: RunnableConfig
+): Promise<GeneratedMemory[]> {
+    if (history.length === 0) {
+        return []
+    }
+
+    memoryAgent ??= createMemoryAgent()
+    const agent = await memoryAgent
+    const result = await agent.invoke({
+        messages: [{
+            role: "user",
+            content: JSON.stringify({ focus, messages: history })
+        }]
+    }, config)
+    const response = memoryResponseSchema.parse(result.structuredResponse)
+    const contents = [...new Set(response.memories)].map(text => new MemoryContent(text))
+
+    if (contents.length === 0) {
+        return []
+    }
+
+    const embeddings = await embedMemoryTexts(contents.map(content => content.value))
+
+    return contents.map((content, index) => ({ content, embedding: embeddings[index] }))
 }

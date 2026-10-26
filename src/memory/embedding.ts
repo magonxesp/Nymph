@@ -16,6 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { OpenAIEmbeddings } from "@langchain/openai"
+import { memoryEmbeddingModel, openAIApiKey } from "../env.js"
+
 export class Embedding {
     public constructor(public readonly value: readonly number[]) {
         this.validate()
@@ -39,4 +42,25 @@ export class Embedding {
             throw new Error("The embedding must not be a zero vector")
         }
     }
+}
+
+let model: OpenAIEmbeddings | undefined
+
+export async function embedMemoryTexts(texts: string[]): Promise<Embedding[]> {
+    if (texts.length === 0) {
+        return []
+    }
+
+    if (!openAIApiKey) {
+        throw new Error("NYMPH_OPENAI_API_KEY is required")
+    }
+
+    model ??= new OpenAIEmbeddings({ apiKey: openAIApiKey, model: memoryEmbeddingModel })
+    const vectors = await model.embedDocuments(texts)
+
+    if (vectors.length !== texts.length) {
+        throw new Error("The embedding model returned an unexpected number of vectors")
+    }
+
+    return vectors.map(vector => new Embedding(vector))
 }

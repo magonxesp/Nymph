@@ -29,7 +29,7 @@ vi.mock("../media/image.js", () => ({
 }))
 
 vi.mock("../agent/agent.js", () => ({
-    createPrivateChatAgent: async () => ({ invoke: invokeMock })
+    createPrivateChatAgent: vi.fn(async () => ({ invoke: invokeMock }))
 }))
 
 const me = {
@@ -81,6 +81,9 @@ describe("handlePrivateMessage images", () => {
 
         await handlePrivateMessage(ctx)
 
+        expect(invokeMock.mock.calls[0][1].configurable).toEqual({
+            chat: { id: `telegram:${chat.id}`, type: "private" }
+        })
         expect(reply).toHaveBeenCalledWith("Un pequeño comentario")
         expect(photo).toHaveBeenCalledWith(media[0].url, { reply_parameters: undefined })
         expect(getPrivateChatHistory(`telegram:${chat.id}`).messages.at(-1)?.content).toBe(media[0].url)

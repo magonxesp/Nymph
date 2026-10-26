@@ -6,20 +6,30 @@ La misma pero ahora con inteligencia :D
 
 ## Compilar y ejecutar
 
-Copia `.env.example` a `.env` y configura, como mínimo, `NYMPH_OPENAI_API_KEY` y `NYMPH_TELEGRAM_TOKEN`.
+Copia `.env.example` a `.env` y configura `NYMPH_OPENAI_API_KEY`, `NYMPH_TELEGRAM_TOKEN` y las variables `NYMPH_POSTGRES_*` para conectar con tu base de datos.
 
 ### Con npm
 
-Instala `ffmpeg` y asegúrate de que esté disponible en `PATH` para redimensionar imágenes y procesar GIF y animaciones. La imagen Docker ya lo incluye.
+Necesitas Node.js 24, `ffmpeg` disponible en `PATH` y una base de datos PostgreSQL 17 con pgvector instalado. Crea la base de datos y el usuario y configura la conexión en `.env` antes de arrancar.
 
 ```sh
 cp .env.example .env
 npm ci
+```
+
+Crea las tablas ejecutando el SQL con los datos de tu conexión (el siguiente ejemplo usa los valores predeterminados de `.env.example` y solicita la contraseña):
+
+```sh
+psql -h localhost -p 5432 -U nymph -d nymph -v ON_ERROR_STOP=1 -f sql/memories.sql
 npm run build
 npm start
 ```
 
 ### Con Docker
+
+Necesitas una base de datos PostgreSQL 17 con pgvector instalado, accesible desde el contenedor. Crea la base de datos, el usuario y las tablas ejecutando `sql/memories.sql` con `psql`, como en la sección anterior. Configura las variables `NYMPH_POSTGRES_*` en `.env`; `NYMPH_POSTGRES_HOST` debe apuntar al servidor de PostgreSQL desde el contenedor. Si PostgreSQL se ejecuta en el equipo local y usas Docker Desktop, puedes utilizar `host.docker.internal`.
+
+La imagen Docker incluye Node.js y `ffmpeg`.
 
 ```sh
 cp .env.example .env
@@ -29,22 +39,22 @@ docker run --rm --env-file .env nymph
 
 ### Con Docker Compose
 
-Configura también `NYMPH_POSTGRES_PASSWORD` en `.env` y ejecuta:
+Configura `NYMPH_POSTGRES_PASSWORD` en `.env`. Arranca PostgreSQL y espera a que esté disponible:
 
 ```sh
-docker compose up --build -d
+docker compose up --build -d --wait postgres
 ```
 
-Compose incluye PostgreSQL 17 Alpine con pgvector 0.8.7. Los datos se conservan en el volumen `postgres_data`; PostgreSQL está disponible en `postgres:5432` dentro de Compose y en `127.0.0.1:5432` desde el equipo local. `NYMPH_POSTGRES_DB` y `NYMPH_POSTGRES_USER` tienen el valor predeterminado `nymph`.
+Compose incluye PostgreSQL 17 Alpine con pgvector 0.8.7. Los datos se conservan en el volumen `postgres`; PostgreSQL está disponible en `postgres:5432` dentro de Compose y en `127.0.0.1:5432` desde el equipo local. `NYMPH_POSTGRES_DB` y `NYMPH_POSTGRES_USER` tienen el valor predeterminado `nymph`.
 
-El fichero `sql/memories.sql` se ejecuta automáticamente al inicializar un volumen vacío. Define `chat_memories`, con memorias compartidas por `chat_id`, sin relación con usuarios. Los embeddings son opcionales y usarán un único modelo configurado en el programa. La dimensión y el índice vectorial se concretarán al elegir el modelo; las búsquedas deberán filtrar por chat.
-
-Para iniciar únicamente la base de datos:
+Crea las tablas una sola vez por base de datos nueva. El SQL habilita la extensión pgvector y crea las tablas e índices; no se ejecuta automáticamente:
 
 ```sh
-docker compose up --build -d postgres
+docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1' < sql/memories.sql
 ```
 
-Esta preparación todavía no conecta el bot con la base de datos.
+Después, compila y arranca el bot:
 
-`database.ts`, en la raíz, exporta la instancia `database` de Knex. Lee `NYMPH_POSTGRES_HOST` (por defecto `localhost`), `NYMPH_POSTGRES_PORT` (por defecto `5432`), `NYMPH_POSTGRES_DB`, `NYMPH_POSTGRES_USER` y `NYMPH_POSTGRES_PASSWORD`. En Compose, el bot usa `postgres:5432` para acceder al servicio.
+```sh
+docker compose up --build -d nymph
+```
