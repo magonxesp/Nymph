@@ -20,11 +20,8 @@ import { tool } from "langchain";
 import { skills } from "./skill.js";
 import z from "zod";
 import fs from "node:fs/promises"
-import { Rule34Client } from "../booru.js"
-import { log } from '../logging.js'
 import { memoryTools } from "../memory/tools.js"
-
-const rule34Client = new Rule34Client()
+import { booruTools } from "../booru/tools.js"
 
 export const readTextFile = tool(
     async ({ path }) => await fs.readFile(path),
@@ -44,73 +41,10 @@ export const getSkill = tool(
     }
 )
 
-export const rule34AutocompleteTags = tool(
-    async (input) => {
-        try {
-            return await rule34Client.autocompleteTags(input.tag)
-        } catch (error) {
-            log.warn({ error, tool: 'rule34_autocomplete_tags', input }, "Rule34 autocomplete tags failed")
-            return { error: error instanceof Error ? error.message : String(error) }
-        }
-    },
-    {
-        name: "rule34_autocomplete_tags",
-        description: "Busca sugerencias para un tag de Rule34. Usa el campo value de una sugerencia para buscar posts.",
-        schema: z.object({ tag: z.string().min(1).describe("Tag incompleto que se quiere autocompletar") }),
-    }
-)
-
-export const rule34RandomPost = tool(
-    async (input) => {
-        try {
-            const post = await rule34Client.getRandomPost(input.tag)
-
-            if (!post) {
-                return `No se encontraron posts para el tag ${input.tag}.`
-            }
-
-            return post.file_url
-        } catch (error) {
-            log.warn({ error, tool: 'rule34_random_post', input }, "Rule34 random post search failed")
-            return { error: error instanceof Error ? error.message : String(error) }
-        }
-    },
-    {
-        name: "rule34_random_post",
-        description: "Devuelve la URL original y el contenido visual de un post aleatorio de Rule34 que tenga el tag indicado. Las imágenes se descargan y redimensionan para poder verlas; las animaciones se muestran como fotogramas.",
-        schema: z.object({ tag: z.string().min(1).describe("Tag de Rule34 usado para buscar el post") }),
-    }
-)
-
-export const rule34Posts = tool(
-    async (input) => {
-        try {
-            return await rule34Client.getPosts(input.tag, {
-                page: input.page,
-                limit: input.limit
-            })
-        } catch (error) {
-            log.warn({ error, tool: 'rule34_posts', input }, "Rule34 post search failed")
-            return { error: error instanceof Error ? error.message : String(error) }
-        }
-    },
-    {
-        name: "rule34_posts",
-        description: "Devuelve un array de posts de Rule34 que tenga el tag indicado.",
-        schema: z.object({
-            tag: z.string().min(1).describe("Tag de Rule34 usado para buscar el post"),
-            page: z.number().min(0).describe("Numero de la pagina del dataset de los posts"),
-            limit: z.number().min(1).max(15).describe("Limite de la cantidad de posts que pueden haver en cada pagina"),
-        }),
-    }
-)
-
 const tools = [
     getSkill,
     readTextFile,
-    rule34AutocompleteTags,
-    rule34RandomPost,
-    rule34Posts,
+    ...booruTools,
     ...memoryTools
 ]
 
