@@ -23,45 +23,44 @@ import type { GetPostsOptions, Post, Posts } from './post.js'
 import type { Tag } from './tag.js'
 
 export interface BooruClient {
-    getPosts(tags: string | string[], options?: GetPostsOptions): Promise<Posts>
-    getRandomPost(tags: string | string[]): Promise<Post | undefined>
-    autocompleteTags(query: string): Promise<Tag[]>
+	getPosts(tags: string | string[], options?: GetPostsOptions): Promise<Posts>
+	getRandomPost(tags: string | string[]): Promise<Post | undefined>
+	autocompleteTags(query: string): Promise<Tag[]>
 }
 
 export type BooruName =
-    | 'gelbooru'
-    | 'safebooru'
-    | 'rule34'
-    | 'danbooru'
-    | 'sonohara'
-    | 'konachan'
-    | 'konachan.net'
-    | 'yandere'
+	'gelbooru' | 'safebooru' | 'rule34' | 'danbooru' | 'sonohara' | 'konachan' | 'konachan.net' | 'yandere'
 
 export const booruNames = [
-    'gelbooru', 'safebooru', 'rule34', 'danbooru',
-    'sonohara', 'konachan', 'konachan.net', 'yandere'
+	'gelbooru',
+	'safebooru',
+	'rule34',
+	'danbooru',
+	'sonohara',
+	'konachan',
+	'konachan.net',
+	'yandere'
 ] as const satisfies readonly BooruName[]
 
 export function getBooruClient(booru: BooruName): BooruClient {
-    switch (booru) {
-        case 'gelbooru':
-            return new GelBooruClient()
-        case 'safebooru':
-            return new SafeBooruClient()
-        case 'rule34':
-            return new Rule34Client()
-        case 'danbooru':
-            return new DanBooruClient()
-        case 'sonohara':
-            return new SonoharaClient()
-        case 'konachan':
-            return new KonachanClient()
-        case 'konachan.net':
-            return new KonachanNetClient()
-        case 'yandere':
-            return new YandereClient()
-        default:
-            throw new Error(`Unsupported booru: ${booru}`)
-    }
+	switch (booru) {
+		case 'gelbooru':
+			return new GelBooruClient()
+		case 'safebooru':
+			return new SafeBooruClient()
+		case 'rule34':
+			return new Rule34Client()
+		case 'danbooru':
+			return new DanBooruClient()
+		case 'sonohara':
+			return new SonoharaClient()
+		case 'konachan':
+			return new KonachanClient()
+		case 'konachan.net':
+			return new KonachanNetClient()
+		case 'yandere':
+			return new YandereClient()
+		default:
+			throw new Error(`Unsupported booru: ${booru}`)
+	}
 }

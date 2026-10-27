@@ -17,40 +17,40 @@
  */
 
 export type Post = {
-    id: number
-    file_url: string
-    tags: string
-    rating: string
-    score: number
-    height?: number
-    width?: number
-    parent_id?: string
-    sample_url?: string
-    sample_width?: number
-    sample_height?: number
-    preview_url?: string
-    preview_width?: number
-    preview_height?: number
-    change?: number
-    md5?: string
-    creator_id?: number
-    has_children?: boolean
-    created_at?: string
-    status?: string
-    source?: string
-    has_notes?: boolean
-    has_comments?: boolean
+	id: number
+	file_url: string
+	tags: string
+	rating: string
+	score: number
+	height?: number
+	width?: number
+	parent_id?: string
+	sample_url?: string
+	sample_width?: number
+	sample_height?: number
+	preview_url?: string
+	preview_width?: number
+	preview_height?: number
+	change?: number
+	md5?: string
+	creator_id?: number
+	has_children?: boolean
+	created_at?: string
+	status?: string
+	source?: string
+	has_notes?: boolean
+	has_comments?: boolean
 }
 
 export type Posts = {
-    count: number
-    offset: number
-    items: Post[]
+	count: number
+	offset: number
+	items: Post[]
 }
 
 export type GetPostsOptions = {
-    limit?: number
-    page?: number
-    id?: number
-    changeId?: number
+	limit?: number
+	page?: number
+	id?: number
+	changeId?: number
 }

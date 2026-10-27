@@ -7,18 +7,18 @@ import type { BooruName } from './client.js'
 import type { BooruClient } from './client.js'
 
 const clientClasses: Record<BooruName, new () => BooruClient> = {
-    gelbooru: GelBooruClient,
-    safebooru: SafeBooruClient,
-    rule34: Rule34Client,
-    danbooru: DanBooruClient,
-    sonohara: SonoharaClient,
-    konachan: KonachanClient,
-    'konachan.net': KonachanNetClient,
-    yandere: YandereClient
+	gelbooru: GelBooruClient,
+	safebooru: SafeBooruClient,
+	rule34: Rule34Client,
+	danbooru: DanBooruClient,
+	sonohara: SonoharaClient,
+	konachan: KonachanClient,
+	'konachan.net': KonachanNetClient,
+	yandere: YandereClient
 }
 
 describe('getBooruClient', () => {
-    it.each(booruNames)('selects the client for %s', booru => {
-        expect(getBooruClient(booru)).toBeInstanceOf(clientClasses[booru])
-    })
+	it.each(booruNames)('selects the client for %s', (booru) => {
+		expect(getBooruClient(booru)).toBeInstanceOf(clientClasses[booru])
+	})
 })

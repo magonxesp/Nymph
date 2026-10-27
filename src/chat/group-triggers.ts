@@ -17,48 +17,56 @@
  */
 
 export function compileGroupTriggers(contents: string): RegExp[] {
-    return contents.split(/\r?\n/)
-        .map(line => line.trim())
-        .filter(line => line.length > 0 && !line.startsWith("#"))
-        .map(pattern => {
-            const expression = [...pattern].map(character => {
-                if (character === "*") {
-                    return ".*"
-                }
+	return contents
+		.split(/\r?\n/)
+		.map((line) => line.trim())
+		.filter((line) => line.length > 0 && !line.startsWith('#'))
+		.map((pattern) => {
+			const expression = [...pattern]
+				.map((character) => {
+					if (character === '*') {
+						return '.*'
+					}
 
-                if (character === "?") {
-                    return "."
-                }
+					if (character === '?') {
+						return '.'
+					}
 
-                return character.replace(/[\\^$+?.()|[\]{}]/g, "\\$&")
-            }).join("")
+					return character.replace(/[\\^$+?.()|[\]{}]/g, '\\$&')
+				})
+				.join('')
 
-            return new RegExp(`^${expression}$`, "isu")
-        })
+			return new RegExp(`^${expression}$`, 'isu')
+		})
 }
 
 export function matchesGroupTrigger(text: string, triggers: RegExp[]): boolean {
-    return triggers.some(trigger => trigger.test(text))
+	return triggers.some((trigger) => trigger.test(text))
 }
 
 export type GroupMentionEntity = {
-    type: string
-    offset: number
-    length: number
-    user?: { id: number }
+	type: string
+	offset: number
+	length: number
+	user?: { id: number }
 }
 
-export function mentionsBot(text: string, entities: GroupMentionEntity[], botId: number, botUsername?: string): boolean {
-    return entities.some(entity => {
-        if (entity.type === "text_mention") {
-            return entity.user?.id === botId
-        }
+export function mentionsBot(
+	text: string,
+	entities: GroupMentionEntity[],
+	botId: number,
+	botUsername?: string
+): boolean {
+	return entities.some((entity) => {
+		if (entity.type === 'text_mention') {
+			return entity.user?.id === botId
+		}
 
-        if (entity.type === "mention" && botUsername) {
-            const mention = text.slice(entity.offset, entity.offset + entity.length)
-            return mention.toLowerCase() === `@${botUsername.toLowerCase()}`
-        }
+		if (entity.type === 'mention' && botUsername) {
+			const mention = text.slice(entity.offset, entity.offset + entity.length)
+			return mention.toLowerCase() === `@${botUsername.toLowerCase()}`
+		}
 
-        return false
-    })
+		return false
+	})
 }

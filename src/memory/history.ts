@@ -16,38 +16,38 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { ChatHistorySnapshot } from "../chat/history.js"
-import type { ChatMessage } from "../chat/chat.js"
-import type { GroupMessage } from "../chat/group.js"
+import type { ChatHistorySnapshot } from '../chat/history.js'
+import type { ChatMessage } from '../chat/chat.js'
+import type { GroupMessage } from '../chat/group.js'
 
 export type MemoryHistoryMessage = {
-    role: "user" | "assistant"
-    text: string
-    id?: number
-    senderId?: string
-    senderName?: string
-    timestamp?: number
-    replyToMessageId?: number
-    mentions?: { text: string; userId: string | null }[]
+	role: 'user' | 'assistant'
+	text: string
+	id?: number
+	senderId?: string
+	senderName?: string
+	timestamp?: number
+	replyToMessageId?: number
+	mentions?: { text: string; userId: string | null }[]
 }
 
 export type MemoryHistorySnapshot = ChatHistorySnapshot<ChatMessage | GroupMessage>
 
 export function createMemoryHistory(snapshot: MemoryHistorySnapshot): MemoryHistoryMessage[] {
-    return snapshot.messages.map(message => {
-        if ("text" in message) {
-            return {
-                role: message.role,
-                text: message.text,
-                id: message.id,
-                senderId: message.senderId,
-                senderName: message.senderName,
-                timestamp: message.timestamp,
-                replyToMessageId: message.replyToMessageId,
-                mentions: message.mentions?.map(mention => ({ ...mention }))
-            }
-        }
+	return snapshot.messages.map((message) => {
+		if ('text' in message) {
+			return {
+				role: message.role,
+				text: message.text,
+				id: message.id,
+				senderId: message.senderId,
+				senderName: message.senderName,
+				timestamp: message.timestamp,
+				replyToMessageId: message.replyToMessageId,
+				mentions: message.mentions?.map((mention) => ({ ...mention }))
+			}
+		}
 
-        return { role: message.role, text: message.content }
-    })
+		return { role: message.role, text: message.content }
+	})
 }

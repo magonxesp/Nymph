@@ -15,65 +15,65 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-import type { ChatFile } from "./attachment.js"
-import { ChatHistory } from "./history.js"
-import { ChatId } from "./id.js"
-import { downloadImages } from "../media/remote.js"
-import { log } from "../logging.js"
+import type { ChatFile } from './attachment.js'
+import { ChatHistory } from './history.js'
+import { ChatId } from './id.js'
+import { downloadImages } from '../media/remote.js'
+import { log } from '../logging.js'
 
 export type ChatMessage = {
-    role: 'assistant' | 'user'
-    content: string;
-    images?: string[]
-    files?: ChatFile[]
+	role: 'assistant' | 'user'
+	content: string
+	images?: string[]
+	files?: ChatFile[]
 }
 
 export class PrivateChatHistory extends ChatHistory<ChatMessage> {
-    public static readonly messageCountLimit = 100
+	public static readonly messageCountLimit = 100
 
-    public constructor(chatId: ChatId) {
-        super(chatId, PrivateChatHistory.messageCountLimit)
-    }
+	public constructor(chatId: ChatId) {
+		super(chatId, PrivateChatHistory.messageCountLimit)
+	}
 
-    public addUserMessage(content: string, images?: string[], files?: ChatFile[]) {
-        this.addMessage({
-            role: "user",
-            content,
-            ...(images?.length ? { images } : {}),
-            ...(files?.length ? { files } : {})
-        })
-    }
+	public addUserMessage(content: string, images?: string[], files?: ChatFile[]) {
+		this.addMessage({
+			role: 'user',
+			content,
+			...(images?.length ? { images } : {}),
+			...(files?.length ? { files } : {})
+		})
+	}
 
-    public async addAssistantMessage(content: string, mediaUrl?: string): Promise<void> {
-        let images: string[] = []
+	public async addAssistantMessage(content: string, mediaUrl?: string): Promise<void> {
+		let images: string[] = []
 
-        if (mediaUrl) {
-            try {
-                images = await downloadImages(mediaUrl)
-            } catch (error) {
-                log.warn({ err: error }, 'Failed to download assistant media for chat history')
-            }
-        }
+		if (mediaUrl) {
+			try {
+				images = await downloadImages(mediaUrl)
+			} catch (error) {
+				log.warn({ err: error }, 'Failed to download assistant media for chat history')
+			}
+		}
 
-        this.addMessage({
-            role: "assistant",
-            content,
-            ...(images.length ? { images } : {})
-        })
-    }
+		this.addMessage({
+			role: 'assistant',
+			content,
+			...(images.length ? { images } : {})
+		})
+	}
 }
 
 const privateChatHistories = new Map<string, PrivateChatHistory>()
 
 export function getPrivateChatHistory(chatId: string): PrivateChatHistory {
-    const existingHistory = privateChatHistories.get(chatId)
+	const existingHistory = privateChatHistories.get(chatId)
 
-    if (existingHistory) {
-        return existingHistory
-    }
+	if (existingHistory) {
+		return existingHistory
+	}
 
-    const history = new PrivateChatHistory(new ChatId(chatId))
-    privateChatHistories.set(chatId, history)
+	const history = new PrivateChatHistory(new ChatId(chatId))
+	privateChatHistories.set(chatId, history)
 
-    return history
+	return history
 }

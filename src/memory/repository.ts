@@ -16,145 +16,146 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { Knex } from "knex"
-import pgvector from "pgvector"
-import { z } from "zod"
-import { database } from "../database.js"
-import type { ChatId } from "../chat/id.js"
-import type { MemoryContent } from "./content.js"
-import type { Embedding } from "./embedding.js"
-import type { MemoryId } from "./id.js"
-import { Memory } from "./memory.js"
+import type { Knex } from 'knex'
+import pgvector from 'pgvector'
+import { z } from 'zod'
+import { database } from '../database.js'
+import type { ChatId } from '../chat/id.js'
+import type { MemoryContent } from './content.js'
+import type { Embedding } from './embedding.js'
+import type { MemoryId } from './id.js'
+import { Memory } from './memory.js'
 
 export type MemoryInput = {
-    content: MemoryContent
-    embedding: Embedding
+	content: MemoryContent
+	embedding: Embedding
 }
 
 export type MemorySearchResult = {
-    memory: Memory
-    distance: number
+	memory: Memory
+	distance: number
 }
 
 type MemoryRow = {
-    id: string
-    chat_id: string
-    content: string
-    embedding: number[] | null
-    created_at: Date
-    updated_at: Date
+	id: string
+	chat_id: string
+	content: string
+	embedding: number[] | null
+	created_at: Date
+	updated_at: Date
 }
 
 const memoryRowSchema = z.object({
-    id: z.string(),
-    chat_id: z.string(),
-    content: z.string(),
-    embedding: z.string().nullable()
-        .transform(value => pgvector.fromSql(value))
-        .pipe(z.array(z.number()).nullable()),
-    created_at: z.date(),
-    updated_at: z.date()
+	id: z.string(),
+	chat_id: z.string(),
+	content: z.string(),
+	embedding: z
+		.string()
+		.nullable()
+		.transform((value) => pgvector.fromSql(value))
+		.pipe(z.array(z.number()).nullable()),
+	created_at: z.date(),
+	updated_at: z.date()
 }) satisfies z.ZodType<MemoryRow>
 
 const searchResultRowSchema = memoryRowSchema.extend({
-    distance: z.number()
+	distance: z.number()
 })
 
 const searchLimitSchema = z.number().int().positive()
 
 function toMemory(memory: MemoryRow): Memory {
-    return new Memory({
-        id: memory.id,
-        chatId: memory.chat_id,
-        content: memory.content,
-        embedding: memory.embedding,
-        createdAt: memory.created_at,
-        updatedAt: memory.updated_at
-    })
+	return new Memory({
+		id: memory.id,
+		chatId: memory.chat_id,
+		content: memory.content,
+		embedding: memory.embedding,
+		createdAt: memory.created_at,
+		updatedAt: memory.updated_at
+	})
 }
 
 export class MemoryRepository {
-    public constructor(private readonly connection: Knex = database) {}
+	public constructor(private readonly connection: Knex = database) {}
 
-    public async insertMany(chatId: ChatId, inputs: MemoryInput[]): Promise<Memory[]> {
-        if (inputs.length === 0) {
-            return []
-        }
+	public async insertMany(chatId: ChatId, inputs: MemoryInput[]): Promise<Memory[]> {
+		if (inputs.length === 0) {
+			return []
+		}
 
-        const now = new Date()
-        const rows: unknown[] = await this.connection("chat_memories")
-            .insert(inputs.map(input => ({
-                chat_id: chatId.value,
-                content: input.content.value,
-                embedding: pgvector.toSql([...input.embedding.value]),
-                created_at: now,
-                updated_at: now
-            })))
-            .returning("*")
+		const now = new Date()
+		const rows: unknown[] = await this.connection('chat_memories')
+			.insert(
+				inputs.map((input) => ({
+					chat_id: chatId.value,
+					content: input.content.value,
+					embedding: pgvector.toSql([...input.embedding.value]),
+					created_at: now,
+					updated_at: now
+				}))
+			)
+			.returning('*')
 
-        return rows.map(row => toMemory(memoryRowSchema.parse(row)))
-    }
+		return rows.map((row) => toMemory(memoryRowSchema.parse(row)))
+	}
 
-    public async insert(chatId: ChatId, input: MemoryInput): Promise<Memory> {
-        const now = new Date()
-        const rows: unknown[] = await this.connection("chat_memories")
-            .insert({
-                chat_id: chatId.value,
-                content: input.content.value,
-                embedding: pgvector.toSql([...input.embedding.value]),
-                created_at: now,
-                updated_at: now
-            })
-            .returning("*")
+	public async insert(chatId: ChatId, input: MemoryInput): Promise<Memory> {
+		const now = new Date()
+		const rows: unknown[] = await this.connection('chat_memories')
+			.insert({
+				chat_id: chatId.value,
+				content: input.content.value,
+				embedding: pgvector.toSql([...input.embedding.value]),
+				created_at: now,
+				updated_at: now
+			})
+			.returning('*')
 
-        return toMemory(memoryRowSchema.parse(rows[0]))
-    }
+		return toMemory(memoryRowSchema.parse(rows[0]))
+	}
 
-    public async search(chatId: ChatId, embedding: Embedding, limit = 5): Promise<MemorySearchResult[]> {
-        const validatedLimit = searchLimitSchema.parse(limit)
-        const distance = this.connection.raw("?? <=> ?::vector", [
-            "embedding",
-            pgvector.toSql([...embedding.value])
-        ])
-        const rows: unknown[] = await this.connection("chat_memories")
-            .select("*", this.connection.raw("? AS distance", [distance]))
-            .where("chat_id", chatId.value)
-            .whereNotNull("embedding")
-            .orderBy(distance, "asc")
-            .limit(validatedLimit)
+	public async search(chatId: ChatId, embedding: Embedding, limit = 5): Promise<MemorySearchResult[]> {
+		const validatedLimit = searchLimitSchema.parse(limit)
+		const distance = this.connection.raw('?? <=> ?::vector', ['embedding', pgvector.toSql([...embedding.value])])
+		const rows: unknown[] = await this.connection('chat_memories')
+			.select('*', this.connection.raw('? AS distance', [distance]))
+			.where('chat_id', chatId.value)
+			.whereNotNull('embedding')
+			.orderBy(distance, 'asc')
+			.limit(validatedLimit)
 
-        return rows.map(row => {
-            const result = searchResultRowSchema.parse(row)
+		return rows.map((row) => {
+			const result = searchResultRowSchema.parse(row)
 
-            return {
-                memory: toMemory(result),
-                distance: result.distance
-            }
-        })
-    }
+			return {
+				memory: toMemory(result),
+				distance: result.distance
+			}
+		})
+	}
 
-    public async update(chatId: ChatId, id: MemoryId, input: MemoryInput): Promise<Memory | undefined> {
-        const rows: unknown[] = await this.connection("chat_memories")
-            .where({ chat_id: chatId.value, id: id.value })
-            .update({
-                content: input.content.value,
-                embedding: pgvector.toSql([...input.embedding.value]),
-                updated_at: new Date()
-            })
-            .returning("*")
+	public async update(chatId: ChatId, id: MemoryId, input: MemoryInput): Promise<Memory | undefined> {
+		const rows: unknown[] = await this.connection('chat_memories')
+			.where({ chat_id: chatId.value, id: id.value })
+			.update({
+				content: input.content.value,
+				embedding: pgvector.toSql([...input.embedding.value]),
+				updated_at: new Date()
+			})
+			.returning('*')
 
-        if (rows.length === 0) {
-            return undefined
-        }
+		if (rows.length === 0) {
+			return undefined
+		}
 
-        return toMemory(memoryRowSchema.parse(rows[0]))
-    }
+		return toMemory(memoryRowSchema.parse(rows[0]))
+	}
 
-    public async delete(chatId: ChatId, id: MemoryId): Promise<boolean> {
-        const deletedCount = await this.connection("chat_memories")
-            .where({ chat_id: chatId.value, id: id.value })
-            .delete()
+	public async delete(chatId: ChatId, id: MemoryId): Promise<boolean> {
+		const deletedCount = await this.connection('chat_memories')
+			.where({ chat_id: chatId.value, id: id.value })
+			.delete()
 
-        return deletedCount > 0
-    }
+		return deletedCount > 0
+	}
 }

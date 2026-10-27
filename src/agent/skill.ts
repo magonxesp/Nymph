@@ -23,260 +23,271 @@ import path from 'node:path'
 import { log } from '../logging.js'
 
 class SkillName {
-    private constructor(public readonly value: string) {
-        this.validate()
-    }
+	private constructor(public readonly value: string) {
+		this.validate()
+	}
 
-    private validate(): void {
-        const isString = typeof this.value === 'string'
-        const hasValidLength = isString && this.value.length >= 1 && this.value.length <= 64
-        const hasValidFormat = isString && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(this.value)
+	private validate(): void {
+		const isString = typeof this.value === 'string'
+		const hasValidLength = isString && this.value.length >= 1 && this.value.length <= 64
+		const hasValidFormat = isString && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(this.value)
 
-        if (!hasValidLength || !hasValidFormat) {
-            throw new Error('The Skill name must be 1-64 lowercase letters, numbers, or hyphen-separated words')
-        }
-    }
+		if (!hasValidLength || !hasValidFormat) {
+			throw new Error('The Skill name must be 1-64 lowercase letters, numbers, or hyphen-separated words')
+		}
+	}
 
-    public static from(frontMatter: Record<string, unknown>): SkillName {
-        if (frontMatter.name === undefined) {
-            throw new Error('The Skill name is required')
-        }
+	public static from(frontMatter: Record<string, unknown>): SkillName {
+		if (frontMatter.name === undefined) {
+			throw new Error('The Skill name is required')
+		}
 
-        return new SkillName(frontMatter.name as string)
-    }
+		return new SkillName(frontMatter.name as string)
+	}
 }
 
 class SkillDescription {
-    private constructor(public readonly value: string) {
-        this.validate()
-    }
+	private constructor(public readonly value: string) {
+		this.validate()
+	}
 
-    private validate(): void {
-        const isString = typeof this.value === 'string'
-        const hasValidLength = isString && this.value.length >= 1 && this.value.length <= 1024
+	private validate(): void {
+		const isString = typeof this.value === 'string'
+		const hasValidLength = isString && this.value.length >= 1 && this.value.length <= 1024
 
-        if (!hasValidLength) {
-            throw new Error('The Skill description must be 1-1024 characters')
-        }
-    }
+		if (!hasValidLength) {
+			throw new Error('The Skill description must be 1-1024 characters')
+		}
+	}
 
-    public static from(frontMatter: Record<string, unknown>): SkillDescription {
-        if (frontMatter.description === undefined) {
-            throw new Error('The Skill description is required')
-        }
+	public static from(frontMatter: Record<string, unknown>): SkillDescription {
+		if (frontMatter.description === undefined) {
+			throw new Error('The Skill description is required')
+		}
 
-        return new SkillDescription(frontMatter.description as string)
-    }
+		return new SkillDescription(frontMatter.description as string)
+	}
 }
 
 class SkillLicense {
-    private constructor(public readonly value: string) {
-        this.validate()
-    }
+	private constructor(public readonly value: string) {
+		this.validate()
+	}
 
-    private validate(): void {
-        if (typeof this.value !== 'string') {
-            throw new Error('The Skill license must be a string')
-        }
-    }
+	private validate(): void {
+		if (typeof this.value !== 'string') {
+			throw new Error('The Skill license must be a string')
+		}
+	}
 
-    public static from(frontMatter: Record<string, unknown>): SkillLicense | undefined {
-        if (frontMatter.license === undefined) {
-            return undefined
-        }
+	public static from(frontMatter: Record<string, unknown>): SkillLicense | undefined {
+		if (frontMatter.license === undefined) {
+			return undefined
+		}
 
-        return new SkillLicense(frontMatter.license as string)
-    }
+		return new SkillLicense(frontMatter.license as string)
+	}
 }
 
 class SkillCompatibility {
-    private constructor(public readonly value: string) {
-        this.validate()
-    }
+	private constructor(public readonly value: string) {
+		this.validate()
+	}
 
-    private validate(): void {
-        const isString = typeof this.value === 'string'
-        const hasValidLength = isString && this.value.length >= 1 && this.value.length <= 500
+	private validate(): void {
+		const isString = typeof this.value === 'string'
+		const hasValidLength = isString && this.value.length >= 1 && this.value.length <= 500
 
-        if (!hasValidLength) {
-            throw new Error('The Skill compatibility must be 1-500 characters')
-        }
-    }
+		if (!hasValidLength) {
+			throw new Error('The Skill compatibility must be 1-500 characters')
+		}
+	}
 
-    public static from(frontMatter: Record<string, unknown>): SkillCompatibility | undefined {
-        if (frontMatter.compatibility === undefined) {
-            return undefined
-        }
+	public static from(frontMatter: Record<string, unknown>): SkillCompatibility | undefined {
+		if (frontMatter.compatibility === undefined) {
+			return undefined
+		}
 
-        return new SkillCompatibility(frontMatter.compatibility as string)
-    }
+		return new SkillCompatibility(frontMatter.compatibility as string)
+	}
 }
 
 class SkillMetadata {
-    private constructor(public readonly value: Record<string, string>) {
-        this.validate()
-    }
+	private constructor(public readonly value: Record<string, string>) {
+		this.validate()
+	}
 
-    private validate(): void {
-        const isObject = this.value !== null && typeof this.value === 'object'
-        const isPlainObject = isObject
-            && !Array.isArray(this.value)
-            && [Object.prototype, null].includes(Object.getPrototypeOf(this.value))
-        const hasStringValues = isPlainObject && Object.values(this.value).every(value => typeof value === 'string')
+	private validate(): void {
+		const isObject = this.value !== null && typeof this.value === 'object'
+		const isPlainObject =
+			isObject &&
+			!Array.isArray(this.value) &&
+			[Object.prototype, null].includes(Object.getPrototypeOf(this.value))
+		const hasStringValues = isPlainObject && Object.values(this.value).every((value) => typeof value === 'string')
 
-        if (!hasStringValues) {
-            throw new Error('The Skill metadata must be a mapping of strings to strings')
-        }
-    }
+		if (!hasStringValues) {
+			throw new Error('The Skill metadata must be a mapping of strings to strings')
+		}
+	}
 
-    public static from(frontMatter: Record<string, unknown>): SkillMetadata | undefined {
-        if (frontMatter.metadata === undefined) {
-            return undefined
-        }
+	public static from(frontMatter: Record<string, unknown>): SkillMetadata | undefined {
+		if (frontMatter.metadata === undefined) {
+			return undefined
+		}
 
-        return new SkillMetadata(frontMatter.metadata as Record<string, string>)
-    }
+		return new SkillMetadata(frontMatter.metadata as Record<string, string>)
+	}
 }
 
 class SkillAllowedTools {
-    private constructor(public readonly value: string) {
-        this.validate()
-    }
+	private constructor(public readonly value: string) {
+		this.validate()
+	}
 
-    private validate(): void {
-        if (typeof this.value !== 'string') {
-            throw new Error('The Skill allowed-tools must be a space-separated string')
-        }
-    }
+	private validate(): void {
+		if (typeof this.value !== 'string') {
+			throw new Error('The Skill allowed-tools must be a space-separated string')
+		}
+	}
 
-    public static from(frontMatter: Record<string, unknown>): SkillAllowedTools | undefined {
-        if (frontMatter['allowed-tools'] === undefined) {
-            return undefined
-        }
+	public static from(frontMatter: Record<string, unknown>): SkillAllowedTools | undefined {
+		if (frontMatter['allowed-tools'] === undefined) {
+			return undefined
+		}
 
-        return new SkillAllowedTools(frontMatter['allowed-tools'] as string)
-    }
+		return new SkillAllowedTools(frontMatter['allowed-tools'] as string)
+	}
 }
 
 export class Skill {
-    private readonly _name: SkillName
-    private readonly _description: SkillDescription
-    private readonly _license?: SkillLicense
-    private readonly _compatibility?: SkillCompatibility
-    private readonly _metadata?: SkillMetadata
-    private readonly _allowedTools?: SkillAllowedTools
+	private readonly _name: SkillName
+	private readonly _description: SkillDescription
+	private readonly _license?: SkillLicense
+	private readonly _compatibility?: SkillCompatibility
+	private readonly _metadata?: SkillMetadata
+	private readonly _allowedTools?: SkillAllowedTools
 
-    constructor(frontMatter: unknown, public readonly content: string = '') {
-        const isObject = frontMatter !== null && typeof frontMatter === 'object'
-        const isPlainObject = isObject && !Array.isArray(frontMatter)
+	constructor(
+		frontMatter: unknown,
+		public readonly content: string = ''
+	) {
+		const isObject = frontMatter !== null && typeof frontMatter === 'object'
+		const isPlainObject = isObject && !Array.isArray(frontMatter)
 
-        if (!isPlainObject) {
-            throw new Error('The Skill front matter must be an object')
-        }
+		if (!isPlainObject) {
+			throw new Error('The Skill front matter must be an object')
+		}
 
-        const fields = frontMatter as Record<string, unknown>
-        this._name = SkillName.from(fields)
-        this._description = SkillDescription.from(fields)
-        this._license = SkillLicense.from(fields)
-        this._compatibility = SkillCompatibility.from(fields)
-        this._metadata = SkillMetadata.from(fields)
-        this._allowedTools = SkillAllowedTools.from(fields)
-    }
+		const fields = frontMatter as Record<string, unknown>
+		this._name = SkillName.from(fields)
+		this._description = SkillDescription.from(fields)
+		this._license = SkillLicense.from(fields)
+		this._compatibility = SkillCompatibility.from(fields)
+		this._metadata = SkillMetadata.from(fields)
+		this._allowedTools = SkillAllowedTools.from(fields)
+	}
 
-    public get name(): string {
-        return this._name.value
-    }
+	public get name(): string {
+		return this._name.value
+	}
 
-    public get description(): string {
-        return this._description.value
-    }
+	public get description(): string {
+		return this._description.value
+	}
 
-    public get license(): string | undefined {
-        return this._license?.value
-    }
+	public get license(): string | undefined {
+		return this._license?.value
+	}
 
-    public get compatibility(): string | undefined {
-        return this._compatibility?.value
-    }
+	public get compatibility(): string | undefined {
+		return this._compatibility?.value
+	}
 
-    public get metadata(): Record<string, string> | undefined {
-        return this._metadata?.value
-    }
+	public get metadata(): Record<string, string> | undefined {
+		return this._metadata?.value
+	}
 
-    public get allowedTools(): string | undefined {
-        return this._allowedTools?.value
-    }
+	public get allowedTools(): string | undefined {
+		return this._allowedTools?.value
+	}
 }
 
 export function parseSkill(skill: string): Skill {
-    const lines = skill.split(/(?<=\n)/)
-    const isFence = (line: string): boolean => line.replace(/\r?\n$/, '') === '---'
-    const hasOpeningFence = isFence(lines[0])
-    const closingFenceIndex = lines.findIndex((line, index) => index > 0 && isFence(line))
-    const hasClosingFence = closingFenceIndex !== -1
+	const lines = skill.split(/(?<=\n)/)
+	const isFence = (line: string): boolean => line.replace(/\r?\n$/, '') === '---'
+	const hasOpeningFence = isFence(lines[0])
+	const closingFenceIndex = lines.findIndex((line, index) => index > 0 && isFence(line))
+	const hasClosingFence = closingFenceIndex !== -1
 
-    if (!hasOpeningFence || !hasClosingFence) {
-        throw new Error('The Skill must begin with a closed YAML frontmatter block')
-    }
+	if (!hasOpeningFence || !hasClosingFence) {
+		throw new Error('The Skill must begin with a closed YAML frontmatter block')
+	}
 
-    const rawFrontMatter = lines.slice(1, closingFenceIndex).join('')
-    const content = lines.slice(closingFenceIndex + 1).join('')
-    const document = parseDocument(rawFrontMatter)
-    if (document.errors.length > 0) {
-        throw new Error(`Invalid Skill YAML frontmatter: ${document.errors[0].message}`)
-    }
+	const rawFrontMatter = lines.slice(1, closingFenceIndex).join('')
+	const content = lines.slice(closingFenceIndex + 1).join('')
+	const document = parseDocument(rawFrontMatter)
+	if (document.errors.length > 0) {
+		throw new Error(`Invalid Skill YAML frontmatter: ${document.errors[0].message}`)
+	}
 
-    return new Skill(document.toJS(), content)
+	return new Skill(document.toJS(), content)
 }
 
 type LoadedSkill = {
-    name: string,
-    path: string,
-    description: string
+	name: string
+	path: string
+	description: string
 }
 
 export const skills = new Map<string, Skill>()
 
 export async function loadSkills() {
-    let entries: string[]
-    const loaded: LoadedSkill[] = []
+	let entries: string[]
+	const loaded: LoadedSkill[] = []
 
-    try {
-        entries = await fs.readdir(skillsDir)
-    } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === "ENOENT") return loaded
-        throw error
-    }
+	try {
+		entries = await fs.readdir(skillsDir)
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code === 'ENOENT') return loaded
+		throw error
+	}
 
-    for (const name of entries) {
-        const skillDir = path.join(skillsDir, name)
-        const stat = await fs.stat(skillDir)
+	for (const name of entries) {
+		const skillDir = path.join(skillsDir, name)
+		const stat = await fs.stat(skillDir)
 
-        if (!stat.isDirectory()) {
-            log.warn({ skill: name, path: skillDir }, 'Skipping skill because it is not a directory')
-            continue
-        }
+		if (!stat.isDirectory()) {
+			log.warn({ skill: name, path: skillDir }, 'Skipping skill because it is not a directory')
+			continue
+		}
 
-        const skillFile = path.join(skillDir, 'SKILL.md')
+		const skillFile = path.join(skillDir, 'SKILL.md')
 
-        try {
-            await fs.access(skillFile)
-        } catch (error) {
-            log.warn({ skill: name, path: skillDir, error }, 'Skipping skill because it SKILL.md does not exists')
-            continue
-        }
+		try {
+			await fs.access(skillFile)
+		} catch (error) {
+			log.warn({ skill: name, path: skillDir, error }, 'Skipping skill because it SKILL.md does not exists')
+			continue
+		}
 
-        try {
-            const skillDir = path.join(skillsDir, name)
-            const skillContent = await fs.readFile(path.join(skillDir, 'SKILL.md'), "utf8")
-            const skill = parseSkill(skillContent)
-            skills.set(name, skill)
-            loaded.push({ name, path: skillDir, description: skill.description })
-        } catch (error) {
-            log.warn({ skill: name, path: skillDir, error }, 'Skipping skill because it may be invalid or there were an IO error')
-            continue
-        }
-    }
+		try {
+			const skillDir = path.join(skillsDir, name)
+			const skillContent = await fs.readFile(path.join(skillDir, 'SKILL.md'), 'utf8')
+			const skill = parseSkill(skillContent)
+			skills.set(name, skill)
+			loaded.push({
+				name,
+				path: skillDir,
+				description: skill.description
+			})
+		} catch (error) {
+			log.warn(
+				{ skill: name, path: skillDir, error },
+				'Skipping skill because it may be invalid or there were an IO error'
+			)
+			continue
+		}
+	}
 
-    return loaded
+	return loaded
 }

@@ -16,31 +16,31 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Bot } from "grammy"
-import { handleGroupMessage } from "./group.js"
-import { handlePrivateMessage } from "./private.js"
+import { Bot } from 'grammy'
+import { handleGroupMessage } from './group.js'
+import { handlePrivateMessage } from './private.js'
 
 const token = process.env.NYMPH_TELEGRAM_TOKEN
 
 if (!token) {
-    throw new Error("NYMPH_TELEGRAM_TOKEN is required")
+	throw new Error('NYMPH_TELEGRAM_TOKEN is required')
 }
 
 export const bot = new Bot(token)
 
-bot.command("start", async (ctx) => {
-    await ctx.reply("Hola 😊")
+bot.command('start', async (ctx) => {
+	await ctx.reply('Hola 😊')
 })
 
-bot.on("message", async (ctx) => {
-    const isGroup = ctx.chat.type === "group" || ctx.chat.type === "supergroup"
+bot.on('message', async (ctx) => {
+	const isGroup = ctx.chat.type === 'group' || ctx.chat.type === 'supergroup'
 
-    if (isGroup) {
-        await handleGroupMessage(ctx)
-        return
-    }
+	if (isGroup) {
+		await handleGroupMessage(ctx)
+		return
+	}
 
-    if (ctx.chat.type === "private") {
-        await handlePrivateMessage(ctx)
-    }
+	if (ctx.chat.type === 'private') {
+		await handlePrivateMessage(ctx)
+	}
 })

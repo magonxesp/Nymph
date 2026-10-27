@@ -17,13 +17,13 @@
  */
 
 export class MemoryContent {
-    public constructor(public readonly value: string) {
-        this.validate()
-    }
+	public constructor(public readonly value: string) {
+		this.validate()
+	}
 
-    private validate(): void {
-        if (this.value.trim().length === 0) {
-            throw new Error("The memory content must not be blank")
-        }
-    }
+	private validate(): void {
+		if (this.value.trim().length === 0) {
+			throw new Error('The memory content must not be blank')
+		}
+	}
 }

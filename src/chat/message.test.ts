@@ -16,57 +16,78 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AIMessage, HumanMessage } from "@langchain/core/messages"
-import { describe, expect, it } from "vitest"
-import { toModelMessage } from "./message.js"
+import { AIMessage, HumanMessage } from '@langchain/core/messages'
+import { describe, expect, it } from 'vitest'
+import { toModelMessage } from './message.js'
 
-describe("toModelMessage", () => {
-    it("maps a stored user message to a HumanMessage", () => {
-        const message = toModelMessage({ role: "user", content: "Hola" })
+describe('toModelMessage', () => {
+	it('maps a stored user message to a HumanMessage', () => {
+		const message = toModelMessage({ role: 'user', content: 'Hola' })
 
-        expect(message).toBeInstanceOf(HumanMessage)
-        expect(message.content).toBe("Hola")
-    })
+		expect(message).toBeInstanceOf(HumanMessage)
+		expect(message.content).toBe('Hola')
+	})
 
-    it("maps a stored assistant message to an AIMessage", () => {
-        const message = toModelMessage({ role: "assistant", content: "Hola" })
+	it('maps a stored assistant message to an AIMessage', () => {
+		const message = toModelMessage({ role: 'assistant', content: 'Hola' })
 
-        expect(message).toBeInstanceOf(AIMessage)
-        expect(message.content).toBe("Hola")
-    })
+		expect(message).toBeInstanceOf(AIMessage)
+		expect(message.content).toBe('Hola')
+	})
 
-    it("includes downloaded assistant images with explicit attribution", () => {
-        const image = "data:image/png;base64,AQID"
-        const message = toModelMessage({ role: "assistant", content: "https://example.com/image.png", images: [image] })
+	it('includes downloaded assistant images with explicit attribution', () => {
+		const image = 'data:image/png;base64,AQID'
+		const message = toModelMessage({
+			role: 'assistant',
+			content: 'https://example.com/image.png',
+			images: [image]
+		})
 
-        expect(message).toBeInstanceOf(HumanMessage)
-        expect(message.content).toEqual([
-            { type: "text", text: "Contenido multimedia enviado por el asistente: https://example.com/image.png" },
-            { type: "image_url", image_url: { url: image } }
-        ])
-    })
+		expect(message).toBeInstanceOf(HumanMessage)
+		expect(message.content).toEqual([
+			{
+				type: 'text',
+				text: 'Contenido multimedia enviado por el asistente: https://example.com/image.png'
+			},
+			{ type: 'image_url', image_url: { url: image } }
+		])
+	})
 })
 
-it("sends the caption and image together as multimodal content", () => {
-    const image = "data:image/png;base64,AQID"
-    const message = toModelMessage({ role: "user", content: "¿Qué ves?", images: [image] })
+it('sends the caption and image together as multimodal content', () => {
+	const image = 'data:image/png;base64,AQID'
+	const message = toModelMessage({
+		role: 'user',
+		content: '¿Qué ves?',
+		images: [image]
+	})
 
-    expect(message).toBeInstanceOf(HumanMessage)
-    expect(message.content).toEqual([
-        { type: "text", text: "¿Qué ves?" },
-        { type: "image_url", image_url: { url: image } }
-    ])
+	expect(message).toBeInstanceOf(HumanMessage)
+	expect(message.content).toEqual([
+		{ type: 'text', text: '¿Qué ves?' },
+		{ type: 'image_url', image_url: { url: image } }
+	])
 })
 
-it("sends arbitrary files with their names and MIME types", () => {
-    const message = toModelMessage({
-        role: "user",
-        content: "Revisa el adjunto",
-        files: [{ filename: "report.pdf", mimeType: "application/pdf", data: "AQID" }]
-    })
+it('sends arbitrary files with their names and MIME types', () => {
+	const message = toModelMessage({
+		role: 'user',
+		content: 'Revisa el adjunto',
+		files: [
+			{
+				filename: 'report.pdf',
+				mimeType: 'application/pdf',
+				data: 'AQID'
+			}
+		]
+	})
 
-    expect(message.content).toEqual([
-        { type: "text", text: "Revisa el adjunto" },
-        { type: "input_file", filename: "report.pdf", file_data: "data:application/pdf;base64,AQID" }
-    ])
+	expect(message.content).toEqual([
+		{ type: 'text', text: 'Revisa el adjunto' },
+		{
+			type: 'input_file',
+			filename: 'report.pdf',
+			file_data: 'data:application/pdf;base64,AQID'
+		}
+	])
 })

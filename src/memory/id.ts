@@ -17,13 +17,13 @@
  */
 
 export class MemoryId {
-    public constructor(public readonly value: string) {
-        this.validate()
-    }
+	public constructor(public readonly value: string) {
+		this.validate()
+	}
 
-    private validate(): void {
-        if (!/^[1-9][0-9]*$/.test(this.value)) {
-            throw new Error("The memory ID must be a positive integer")
-        }
-    }
+	private validate(): void {
+		if (!/^[1-9][0-9]*$/.test(this.value)) {
+			throw new Error('The memory ID must be a positive integer')
+		}
+	}
 }

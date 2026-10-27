@@ -17,12 +17,12 @@
  */
 
 export type ChatFile = {
-    filename: string
-    mimeType: string
-    data: string
+	filename: string
+	mimeType: string
+	data: string
 }
 
 export type ChatAttachments = {
-    images: string[]
-    files: ChatFile[]
+	images: string[]
+	files: ChatFile[]
 }

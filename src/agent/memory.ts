@@ -16,30 +16,33 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { readFile } from "node:fs/promises"
-import path from "node:path"
-import { ChatOpenAI } from "@langchain/openai"
-import { createAgent, providerStrategy } from "langchain"
-import { memoryModel, openAIApiKey, promptsDir } from "../env.js"
-import { memoryResponseSchema } from "../memory/response.js"
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
+import { ChatOpenAI } from '@langchain/openai'
+import { createAgent, providerStrategy } from 'langchain'
+import { memoryModel, openAIApiKey, promptsDir } from '../env.js'
+import { memoryResponseSchema } from '../memory/response.js'
 
 export async function createMemoryAgent() {
-    if (!openAIApiKey) {
-        throw new Error("NYMPH_OPENAI_API_KEY is required")
-    }
+	if (!openAIApiKey) {
+		throw new Error('NYMPH_OPENAI_API_KEY is required')
+	}
 
-    const systemPrompt = await readFile(path.join(promptsDir, "memory.md"), "utf8")
+	const systemPrompt = await readFile(path.join(promptsDir, 'memory.md'), 'utf8')
 
-    return createAgent({
-        model: new ChatOpenAI({
-            apiKey: openAIApiKey,
-            model: memoryModel,
-            useResponsesApi: true,
-            reasoning: { effort: "none" },
-            verbosity: "low"
-        }),
-        tools: [],
-        systemPrompt,
-        responseFormat: providerStrategy({ schema: memoryResponseSchema, strict: true })
-    })
+	return createAgent({
+		model: new ChatOpenAI({
+			apiKey: openAIApiKey,
+			model: memoryModel,
+			useResponsesApi: true,
+			reasoning: { effort: 'none' },
+			verbosity: 'low'
+		}),
+		tools: [],
+		systemPrompt,
+		responseFormat: providerStrategy({
+			schema: memoryResponseSchema,
+			strict: true
+		})
+	})
 }

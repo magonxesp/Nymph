@@ -16,57 +16,60 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { EventEmitter } from "node:events"
-import type { ChatId } from "./id.js"
+import { EventEmitter } from 'node:events'
+import type { ChatId } from './id.js'
 
 export type ChatHistorySnapshot<Message> = {
-    chatId: ChatId
-    messages: Message[]
-    lastMessageSequence: number
+	chatId: ChatId
+	messages: Message[]
+	lastMessageSequence: number
 }
 
 export class ChatHistory<Message> extends EventEmitter<{
-    snapshot: [snapshot: ChatHistorySnapshot<Message>]
+	snapshot: [snapshot: ChatHistorySnapshot<Message>]
 }> {
-    private readonly _messages: Message[] = []
-    private messageSequence = 0
-    private lastSnapshotMessageSequence = 0
+	private readonly _messages: Message[] = []
+	private messageSequence = 0
+	private lastSnapshotMessageSequence = 0
 
-    protected constructor(public readonly chatId: ChatId, private readonly messageCountLimit: number) {
-        super()
-    }
+	protected constructor(
+		public readonly chatId: ChatId,
+		private readonly messageCountLimit: number
+	) {
+		super()
+	}
 
-    public addMessage(message: Message): void {
-        this._messages.push(message)
-        this.messageSequence++
+	public addMessage(message: Message): void {
+		this._messages.push(message)
+		this.messageSequence++
 
-        if (this._messages.length > this.messageCountLimit) {
-            this._messages.splice(0, this._messages.length - this.messageCountLimit)
-        }
+		if (this._messages.length > this.messageCountLimit) {
+			this._messages.splice(0, this._messages.length - this.messageCountLimit)
+		}
 
-        const newMessageCount = this.messageSequence - this.lastSnapshotMessageSequence
+		const newMessageCount = this.messageSequence - this.lastSnapshotMessageSequence
 
-        if (newMessageCount >= this.messageCountLimit) {
-            const snapshot = this.snapshot
+		if (newMessageCount >= this.messageCountLimit) {
+			const snapshot = this.snapshot
 
-            this.lastSnapshotMessageSequence = this.messageSequence
-            this.emit("snapshot", snapshot)
-        }
-    }
+			this.lastSnapshotMessageSequence = this.messageSequence
+			this.emit('snapshot', snapshot)
+		}
+	}
 
-    public get snapshot(): ChatHistorySnapshot<Message> {
-        return {
-            chatId: this.chatId,
-            messages: structuredClone(this._messages),
-            lastMessageSequence: this.messageSequence
-        }
-    }
+	public get snapshot(): ChatHistorySnapshot<Message> {
+		return {
+			chatId: this.chatId,
+			messages: structuredClone(this._messages),
+			lastMessageSequence: this.messageSequence
+		}
+	}
 
-    public get messagesCount(): number {
-        return this._messages.length
-    }
+	public get messagesCount(): number {
+		return this._messages.length
+	}
 
-    public get messages(): Message[] {
-        return this._messages.slice()
-    }
+	public get messages(): Message[] {
+		return this._messages.slice()
+	}
 }

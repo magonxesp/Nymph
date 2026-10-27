@@ -16,61 +16,73 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { describe, expect, it, vi } from "vitest"
-import { ChatOpenAI } from "@langchain/openai"
-import { createAgent, providerStrategy } from "langchain"
-import { createMemoryAgent } from "./memory.js"
-import { memoryResponseSchema } from "../memory/response.js"
+import { describe, expect, it, vi } from 'vitest'
+import { ChatOpenAI } from '@langchain/openai'
+import { createAgent, providerStrategy } from 'langchain'
+import { createMemoryAgent } from './memory.js'
+import { memoryResponseSchema } from '../memory/response.js'
 
-vi.mock("@langchain/openai", () => ({
-    ChatOpenAI: vi.fn(function () {
-        return {}
-    })
+vi.mock('@langchain/openai', () => ({
+	ChatOpenAI: vi.fn(function () {
+		return {}
+	})
 }))
 
-vi.mock("langchain", () => ({
-    createAgent: vi.fn(),
-    providerStrategy: vi.fn()
+vi.mock('langchain', () => ({
+	createAgent: vi.fn(),
+	providerStrategy: vi.fn()
 }))
 
-vi.mock("../env.js", () => ({
-    openAIApiKey: "test-key",
-    memoryModel: "custom-memory-model",
-    promptsDir: new URL("../../prompts/", import.meta.url).pathname
+vi.mock('../env.js', () => ({
+	openAIApiKey: 'test-key',
+	memoryModel: 'custom-memory-model',
+	promptsDir: new URL('../../prompts/', import.meta.url).pathname
 }))
 
-describe("createMemoryAgent", () => {
-    it("configures the memory model without reasoning or conversation tools", async () => {
-        await createMemoryAgent()
+describe('createMemoryAgent', () => {
+	it('configures the memory model without reasoning or conversation tools', async () => {
+		await createMemoryAgent()
 
-        expect(ChatOpenAI).toHaveBeenCalledWith({
-            apiKey: "test-key",
-            model: "custom-memory-model",
-            useResponsesApi: true,
-            reasoning: { effort: "none" },
-            verbosity: "low"
-        })
-        expect(createAgent).toHaveBeenCalledWith(expect.objectContaining({
-            tools: [],
-            systemPrompt: expect.stringContaining("datos JSON")
-        }))
-        expect(providerStrategy).toHaveBeenCalledWith({
-            schema: memoryResponseSchema,
-            strict: true
-        })
-    })
+		expect(ChatOpenAI).toHaveBeenCalledWith({
+			apiKey: 'test-key',
+			model: 'custom-memory-model',
+			useResponsesApi: true,
+			reasoning: { effort: 'none' },
+			verbosity: 'low'
+		})
+		expect(createAgent).toHaveBeenCalledWith(
+			expect.objectContaining({
+				tools: [],
+				systemPrompt: expect.stringContaining('datos JSON')
+			})
+		)
+		expect(providerStrategy).toHaveBeenCalledWith({
+			schema: memoryResponseSchema,
+			strict: true
+		})
+	})
 })
 
-describe("memoryResponseSchema", () => {
-    it("accepts individual memories and an empty list", () => {
-        expect(memoryResponseSchema.parse({ memories: ["El proyecto se llama Nymph."] }))
-            .toEqual({ memories: ["El proyecto se llama Nymph."] })
-        expect(memoryResponseSchema.parse({ memories: [] })).toEqual({ memories: [] })
-    })
+describe('memoryResponseSchema', () => {
+	it('accepts individual memories and an empty list', () => {
+		expect(
+			memoryResponseSchema.parse({
+				memories: ['El proyecto se llama Nymph.']
+			})
+		).toEqual({ memories: ['El proyecto se llama Nymph.'] })
+		expect(memoryResponseSchema.parse({ memories: [] })).toEqual({
+			memories: []
+		})
+	})
 
-    it("rejects blank memories and responses outside the expected structure", () => {
-        expect(() => memoryResponseSchema.parse({ memories: [""] })).toThrow()
-        expect(() => memoryResponseSchema.parse({ memories: "Un recuerdo" })).toThrow()
-        expect(() => memoryResponseSchema.parse({ memories: [], explanation: "Nada relevante" })).toThrow()
-    })
+	it('rejects blank memories and responses outside the expected structure', () => {
+		expect(() => memoryResponseSchema.parse({ memories: [''] })).toThrow()
+		expect(() => memoryResponseSchema.parse({ memories: 'Un recuerdo' })).toThrow()
+		expect(() =>
+			memoryResponseSchema.parse({
+				memories: [],
+				explanation: 'Nada relevante'
+			})
+		).toThrow()
+	})
 })
