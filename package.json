@@ -7,13 +7,18 @@
   "scripts": {
     "test": "vitest src",
     "start": "tsx src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "lint": "oxlint && prettier src/ --check",
+    "lint:fix": "oxlint --fix",
+    "format": "prettier src/ --write"
   },
   "keywords": [],
   "author": "MagonxESP",
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
     "@types/node": "^25.9.1",
+    "oxlint": "^1.89.0",
+    "prettier": "3.9.10",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vitest": "^5.0.4"
