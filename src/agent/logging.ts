@@ -18,7 +18,31 @@
 
 import { BaseCallbackHandler } from "@langchain/core/callbacks/base"
 import type { LLMResult } from "@langchain/core/outputs"
+import { z } from "zod"
 import { log } from "../logging.js"
+
+interface ModelUsage {
+	usage_metadata: {
+		input_tokens: number
+		output_tokens: number
+		total_tokens: number
+		input_token_details?: { cache_read?: number }
+		output_token_details?: { reasoning?: number }
+	}
+	response_metadata?: { model_name?: string }
+}
+
+const tokenCountSchema = z.number().int().nonnegative()
+const modelUsageSchema: z.ZodType<ModelUsage> = z.object({
+	usage_metadata: z.object({
+		input_tokens: tokenCountSchema,
+		output_tokens: tokenCountSchema,
+		total_tokens: tokenCountSchema,
+		input_token_details: z.object({ cache_read: tokenCountSchema.optional() }).optional(),
+		output_token_details: z.object({ reasoning: tokenCountSchema.optional() }).optional()
+	}),
+	response_metadata: z.object({ model_name: z.string().optional() }).optional()
+})
 
 function getReasoning(content: unknown): string[] {
 	if (!Array.isArray(content)) {
@@ -59,6 +83,19 @@ export class PinoLangChainHandler extends BaseCallbackHandler {
 			}
 
 			const message: unknown = generation.message
+			const modelUsage = modelUsageSchema.safeParse(message)
+
+			if (modelUsage.success) {
+				log.info(
+					{
+						chatId: this.chatId,
+						runId,
+						model: modelUsage.data.response_metadata?.model_name,
+						usage: modelUsage.data.usage_metadata
+					},
+					"LangChain model token usage"
+				)
+			}
 
 			if (typeof message !== "object" || message === null || !("content" in message)) {
 				continue

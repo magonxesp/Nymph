@@ -4,10 +4,70 @@ import { log } from "../logging.js"
 import { PinoLangChainHandler } from "./logging.js"
 
 vi.mock("../logging.js", () => ({
-	log: { debug: vi.fn(), error: vi.fn() }
+	log: { debug: vi.fn(), info: vi.fn(), error: vi.fn() }
 }))
 
 describe("PinoLangChainHandler", () => {
+	it("logs provider token usage for every inference with its model, chat and run", () => {
+		vi.clearAllMocks()
+		const handler = new PinoLangChainHandler(123)
+		const usage = {
+			input_tokens: 100,
+			output_tokens: 40,
+			total_tokens: 140,
+			input_token_details: { cache_read: 50 },
+			output_token_details: { reasoning: 20 }
+		}
+		const message = new AIMessage({
+			content: "Response",
+			usage_metadata: usage,
+			response_metadata: { model_name: "test-model" }
+		})
+
+		const generations = [[{ text: "Response", message }]]
+
+		handler.handleLLMEnd({ generations }, "run-usage")
+
+		expect(log.info).toHaveBeenCalledExactlyOnceWith(
+			{ chatId: 123, runId: "run-usage", model: "test-model", usage },
+			"LangChain model token usage"
+		)
+	})
+
+	it("logs zero usage without requiring optional token details or a model", () => {
+		vi.clearAllMocks()
+		const handler = new PinoLangChainHandler(123)
+		const usage = { input_tokens: 0, output_tokens: 0, total_tokens: 0 }
+		const message = new AIMessage({ content: "", usage_metadata: usage })
+
+		const generations = [[{ text: "", message }]]
+
+		handler.handleLLMEnd({ generations }, "run-zero")
+
+		expect(log.info).toHaveBeenCalledExactlyOnceWith(
+			{ chatId: 123, runId: "run-zero", model: undefined, usage },
+			"LangChain model token usage"
+		)
+	})
+
+	it("skips absent or invalid usage rather than reporting zero tokens", () => {
+		vi.clearAllMocks()
+		const handler = new PinoLangChainHandler(123)
+		const generations = [
+			[
+				{ text: "", message: new AIMessage("") },
+				{ text: "", message: { usage_metadata: { input_tokens: "10", output_tokens: 2, total_tokens: 12 } } },
+				{ text: "", message: { usage_metadata: { input_tokens: -1, output_tokens: 2, total_tokens: 1 } } },
+				{ text: "", message: { usage_metadata: { input_tokens: 10 } } }
+			]
+		]
+
+		handler.handleLLMEnd({ generations }, "run-missing")
+
+		expect(log.info).not.toHaveBeenCalled()
+		expect(log.debug).toHaveBeenCalledWith({ chatId: 123, runId: "run-missing" }, "LangChain model finished")
+	})
+
 	it("logs reasoning summaries with the chat and run without logging other output", () => {
 		vi.clearAllMocks()
 		const handler = new PinoLangChainHandler(123)
