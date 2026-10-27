@@ -23,7 +23,7 @@ export class MemoryId {
 
 	private validate(): void {
 		if (!/^[1-9][0-9]*$/.test(this.value)) {
-			throw new Error('The memory ID must be a positive integer')
+			throw new Error("The memory ID must be a positive integer")
 		}
 	}
 }

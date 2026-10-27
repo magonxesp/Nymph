@@ -16,58 +16,58 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { embedMemoryTexts } from './embedding.js'
+import { beforeEach, describe, expect, it, vi } from "vitest"
+import { embedMemoryTexts } from "./embedding.js"
 
 const { embedDocumentsMock } = vi.hoisted(() => ({
 	embedDocumentsMock: vi.fn()
 }))
 
-vi.mock('@langchain/openai', () => ({
+vi.mock("@langchain/openai", () => ({
 	OpenAIEmbeddings: vi.fn(function () {
 		return { embedDocuments: embedDocumentsMock }
 	})
 }))
 
-vi.mock('../env.js', () => ({
-	openAIApiKey: 'test-key',
-	memoryEmbeddingModel: 'test-embedding-model'
+vi.mock("../env.js", () => ({
+	openAIApiKey: "test-key",
+	memoryEmbeddingModel: "test-embedding-model"
 }))
 
 beforeEach(() => {
 	vi.clearAllMocks()
 })
 
-describe('Memory embeddings', () => {
-	it('skips the API when there are no memories', async () => {
+describe("Memory embeddings", () => {
+	it("skips the API when there are no memories", async () => {
 		expect(await embedMemoryTexts([])).toEqual([])
 		expect(embedDocumentsMock).not.toHaveBeenCalled()
 	})
 
-	it('embeds multiple texts in a single batch and validates the returned vectors', async () => {
+	it("embeds multiple texts in a single batch and validates the returned vectors", async () => {
 		embedDocumentsMock.mockResolvedValue([
 			[1, 0],
 			[0, 1]
 		])
 
-		const embeddings = await embedMemoryTexts(['Nymph', 'Miku'])
+		const embeddings = await embedMemoryTexts(["Nymph", "Miku"])
 
-		expect(embedDocumentsMock).toHaveBeenCalledExactlyOnceWith(['Nymph', 'Miku'])
+		expect(embedDocumentsMock).toHaveBeenCalledExactlyOnceWith(["Nymph", "Miku"])
 		expect(embeddings.map((embedding) => embedding.value)).toEqual([
 			[1, 0],
 			[0, 1]
 		])
 	})
 
-	it('rejects missing vectors', async () => {
+	it("rejects missing vectors", async () => {
 		embedDocumentsMock.mockResolvedValue([[1, 0]])
 
-		await expect(embedMemoryTexts(['Nymph', 'Miku'])).rejects.toThrow('number of vectors')
+		await expect(embedMemoryTexts(["Nymph", "Miku"])).rejects.toThrow("number of vectors")
 	})
 
-	it('rejects unusable vectors before they can be stored', async () => {
+	it("rejects unusable vectors before they can be stored", async () => {
 		embedDocumentsMock.mockResolvedValue([[0, 0]])
 
-		await expect(embedMemoryTexts(['Nymph'])).rejects.toThrow('zero vector')
+		await expect(embedMemoryTexts(["Nymph"])).rejects.toThrow("zero vector")
 	})
 })

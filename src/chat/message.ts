@@ -16,12 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { AIMessage, HumanMessage } from '@langchain/core/messages'
-import type { ChatFile } from './attachment.js'
-import type { ChatMessage } from './chat.js'
+import { AIMessage, HumanMessage } from "@langchain/core/messages"
+import type { ChatFile } from "./attachment.js"
+import type { ChatMessage } from "./chat.js"
 
 export function toModelMessage(message: ChatMessage): AIMessage | HumanMessage {
-	if (message.role === 'user') {
+	if (message.role === "user") {
 		return toHumanMessage(message.content, message.images, message.files)
 	}
 
@@ -40,13 +40,13 @@ export function toHumanMessage(text: string, images: string[] = [], files: ChatF
 
 	return new HumanMessage({
 		content: [
-			{ type: 'text', text },
+			{ type: "text", text },
 			...images.map((url) => ({
-				type: 'image_url' as const,
+				type: "image_url" as const,
 				image_url: { url }
 			})),
 			...files.map((file) => ({
-				type: 'input_file' as const,
+				type: "input_file" as const,
 				filename: file.filename,
 				file_data: `data:${file.mimeType};base64,${file.data}`
 			}))

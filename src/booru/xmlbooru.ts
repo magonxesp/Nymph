@@ -16,19 +16,19 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { XMLParser } from 'fast-xml-parser'
-import { SyntaxValidator } from 'fast-xml-validator'
-import { z } from 'zod'
-import type { BooruClient } from './client.js'
-import type { GetPostsOptions, Post, Posts } from './post.js'
-import type { Tag } from './tag.js'
+import { XMLParser } from "fast-xml-parser"
+import { SyntaxValidator } from "fast-xml-validator"
+import { z } from "zod"
+import type { BooruClient } from "./client.js"
+import type { GetPostsOptions, Post, Posts } from "./post.js"
+import type { Tag } from "./tag.js"
 
 const pageSize = 100
 const xmlParser = new XMLParser({
 	ignoreAttributes: false,
-	attributeNamePrefix: '',
+	attributeNamePrefix: "",
 	parseAttributeValue: true,
-	isArray: (_tagName, path) => path === 'posts.post'
+	isArray: (_tagName, path) => path === "posts.post"
 })
 
 type ParsedPosts = {
@@ -49,7 +49,7 @@ const postSchema: z.ZodType<Post> = z.object({
 	file_url: z.string(),
 	tags: z.string(),
 	rating: z.string(),
-	score: z.union([z.number(), z.literal('').transform(() => 0)]),
+	score: z.union([z.number(), z.literal("").transform(() => 0)]),
 	height: z.number().optional(),
 	width: z.number().optional(),
 	parent_id: optionalText,
@@ -81,7 +81,7 @@ export abstract class XmlBooruClient implements BooruClient {
 	protected readonly baseUrl: URL
 
 	protected constructor(baseUrl: string) {
-		this.baseUrl = new URL(baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`)
+		this.baseUrl = new URL(baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`)
 	}
 
 	public abstract getPosts(tags: string | string[], options?: GetPostsOptions): Promise<Posts>
@@ -102,7 +102,7 @@ export abstract class XmlBooruClient implements BooruClient {
 	}
 
 	protected parsePosts(xml: string): Posts {
-		if (xml.trim() === '') {
+		if (xml.trim() === "") {
 			return { count: 0, offset: 0, items: [] }
 		}
 
@@ -117,17 +117,17 @@ export abstract class XmlBooruClient implements BooruClient {
 		const document = z.object({ posts: parsedPostsSchema }).safeParse(data)
 
 		if (!document.success) {
-			throw new Error('Invalid booru posts response')
+			throw new Error("Invalid booru posts response")
 		}
 
 		const posts = document.data.posts
 
 		if (posts.success === false) {
-			throw new Error(`Booru search failed: ${posts.reason ?? 'unknown error'}`)
+			throw new Error(`Booru search failed: ${posts.reason ?? "unknown error"}`)
 		}
 
 		if (posts.count === undefined) {
-			throw new Error('Invalid booru posts response')
+			throw new Error("Invalid booru posts response")
 		}
 
 		return {

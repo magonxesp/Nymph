@@ -20,23 +20,23 @@ export function compileGroupTriggers(contents: string): RegExp[] {
 	return contents
 		.split(/\r?\n/)
 		.map((line) => line.trim())
-		.filter((line) => line.length > 0 && !line.startsWith('#'))
+		.filter((line) => line.length > 0 && !line.startsWith("#"))
 		.map((pattern) => {
 			const expression = [...pattern]
 				.map((character) => {
-					if (character === '*') {
-						return '.*'
+					if (character === "*") {
+						return ".*"
 					}
 
-					if (character === '?') {
-						return '.'
+					if (character === "?") {
+						return "."
 					}
 
-					return character.replace(/[\\^$+?.()|[\]{}]/g, '\\$&')
+					return character.replace(/[\\^$+?.()|[\]{}]/g, "\\$&")
 				})
-				.join('')
+				.join("")
 
-			return new RegExp(`^${expression}$`, 'isu')
+			return new RegExp(`^${expression}$`, "isu")
 		})
 }
 
@@ -58,11 +58,11 @@ export function mentionsBot(
 	botUsername?: string
 ): boolean {
 	return entities.some((entity) => {
-		if (entity.type === 'text_mention') {
+		if (entity.type === "text_mention") {
 			return entity.user?.id === botId
 		}
 
-		if (entity.type === 'mention' && botUsername) {
+		if (entity.type === "mention" && botUsername) {
 			const mention = text.slice(entity.offset, entity.offset + entity.length)
 			return mention.toLowerCase() === `@${botUsername.toLowerCase()}`
 		}

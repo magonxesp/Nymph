@@ -16,10 +16,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { z } from 'zod'
-import type { BooruClient } from './client.js'
-import type { GetPostsOptions, Post, Posts } from './post.js'
-import type { Tag } from './tag.js'
+import { z } from "zod"
+import type { BooruClient } from "./client.js"
+import type { GetPostsOptions, Post, Posts } from "./post.js"
+import type { Tag } from "./tag.js"
 
 export type DanBooruClientOptions = {
 	baseUrl?: string
@@ -66,11 +66,11 @@ export class DanBooruClient implements BooruClient {
 		const hasOneCredential = (options.apiKey === undefined) !== (options.login === undefined)
 
 		if (hasOneCredential) {
-			throw new Error('Danbooru apiKey and login must be provided together')
+			throw new Error("Danbooru apiKey and login must be provided together")
 		}
 
-		const baseUrl = options.baseUrl ?? 'https://danbooru.donmai.us/'
-		this.baseUrl = new URL(baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`)
+		const baseUrl = options.baseUrl ?? "https://danbooru.donmai.us/"
+		this.baseUrl = new URL(baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`)
 		this.options = { ...options }
 	}
 
@@ -83,19 +83,19 @@ export class DanBooruClient implements BooruClient {
 		}
 
 		if (changeId !== undefined) {
-			throw new Error('Danbooru does not support changeId searches')
+			throw new Error("Danbooru does not support changeId searches")
 		}
 
-		const query = searchTags.join(' ').trim()
-		const url = this.createUrl('posts.json')
-		url.searchParams.set('tags', query)
-		url.searchParams.set('limit', String(limit))
-		url.searchParams.set('page', String(page + 1))
+		const query = searchTags.join(" ").trim()
+		const url = this.createUrl("posts.json")
+		url.searchParams.set("tags", query)
+		url.searchParams.set("limit", String(limit))
+		url.searchParams.set("page", String(page + 1))
 
 		const data = await this.request(url)
 		const items = this.parsePosts(data)
-		const countUrl = this.createUrl('counts/posts.json')
-		countUrl.searchParams.set('tags', query)
+		const countUrl = this.createUrl("counts/posts.json")
+		countUrl.searchParams.set("tags", query)
 		const counts = z
 			.object({
 				counts: z.object({ posts: z.number().int().nonnegative() })
@@ -106,19 +106,19 @@ export class DanBooruClient implements BooruClient {
 	}
 
 	public async getRandomPost(tags: string | string[]): Promise<Post | undefined> {
-		const url = this.createUrl('posts.json')
-		url.searchParams.set('tags', Array.isArray(tags) ? tags.join(' ') : tags)
-		url.searchParams.set('limit', '1')
-		url.searchParams.set('random', 'true')
+		const url = this.createUrl("posts.json")
+		url.searchParams.set("tags", Array.isArray(tags) ? tags.join(" ") : tags)
+		url.searchParams.set("limit", "1")
+		url.searchParams.set("random", "true")
 
 		return this.parsePosts(await this.request(url))[0]
 	}
 
 	public async autocompleteTags(query: string): Promise<Tag[]> {
-		const url = this.createUrl('tags.json')
-		url.searchParams.set('search[name_matches]', `${query}*`)
-		url.searchParams.set('search[order]', 'count')
-		url.searchParams.set('limit', '20')
+		const url = this.createUrl("tags.json")
+		url.searchParams.set("search[name_matches]", `${query}*`)
+		url.searchParams.set("search[order]", "count")
+		url.searchParams.set("limit", "20")
 		const tags = z.array(z.object({ name: z.string() })).parse(await this.request(url))
 
 		return tags.map((tag) => ({ label: tag.name, value: tag.name }))
@@ -128,8 +128,8 @@ export class DanBooruClient implements BooruClient {
 		const url = new URL(path, this.baseUrl)
 
 		if (this.options.apiKey !== undefined && this.options.login !== undefined) {
-			url.searchParams.set('api_key', this.options.apiKey)
-			url.searchParams.set('login', this.options.login)
+			url.searchParams.set("api_key", this.options.apiKey)
+			url.searchParams.set("login", this.options.login)
 		}
 
 		return url
@@ -137,7 +137,7 @@ export class DanBooruClient implements BooruClient {
 
 	private async request(url: URL): Promise<unknown> {
 		const response = await fetch(url, {
-			headers: { 'User-Agent': this.options.userAgent ?? 'Nymph/1.0' }
+			headers: { "User-Agent": this.options.userAgent ?? "Nymph/1.0" }
 		})
 
 		if (!response.ok) {
@@ -153,7 +153,7 @@ export class DanBooruClient implements BooruClient {
 			.parse(data)
 			.map((post) => ({
 				id: post.id,
-				file_url: post.file_url ?? '',
+				file_url: post.file_url ?? "",
 				tags: post.tag_string,
 				rating: post.rating,
 				score: post.score,
@@ -170,6 +170,6 @@ export class DanBooruClient implements BooruClient {
 
 export class SonoharaClient extends DanBooruClient {
 	public constructor(options: DanBooruClientOptions = {}) {
-		super({ baseUrl: 'https://sonohara.donmai.us/', ...options })
+		super({ baseUrl: "https://sonohara.donmai.us/", ...options })
 	}
 }

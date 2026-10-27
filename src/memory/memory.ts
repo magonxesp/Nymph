@@ -16,14 +16,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { RunnableConfig } from '@langchain/core/runnables'
-import { createMemoryAgent } from '../agent/memory.js'
-import type { MemoryHistoryMessage } from './history.js'
-import { memoryResponseSchema } from './response.js'
-import { ChatId } from '../chat/id.js'
-import { MemoryContent } from './content.js'
-import { Embedding, embedMemoryTexts } from './embedding.js'
-import { MemoryId } from './id.js'
+import type { RunnableConfig } from "@langchain/core/runnables"
+import { createMemoryAgent } from "../agent/memory.js"
+import type { MemoryHistoryMessage } from "./history.js"
+import { memoryResponseSchema } from "./response.js"
+import { ChatId } from "../chat/id.js"
+import { MemoryContent } from "./content.js"
+import { Embedding, embedMemoryTexts } from "./embedding.js"
+import { MemoryId } from "./id.js"
 
 export type MemoryObject = {
 	id: string
@@ -51,11 +51,11 @@ export class Memory {
 		this.updatedAt = new Date(data.updatedAt)
 
 		if (Number.isNaN(this.createdAt.getTime())) {
-			throw new Error('The memory creation date must be valid')
+			throw new Error("The memory creation date must be valid")
 		}
 
 		if (Number.isNaN(this.updatedAt.getTime())) {
-			throw new Error('The memory update date must be valid')
+			throw new Error("The memory update date must be valid")
 		}
 	}
 }
@@ -82,7 +82,7 @@ export async function generateMemories(
 		{
 			messages: [
 				{
-					role: 'user',
+					role: "user",
 					content: JSON.stringify({ focus, messages: history })
 				}
 			]

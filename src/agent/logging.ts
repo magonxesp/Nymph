@@ -16,9 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { BaseCallbackHandler } from '@langchain/core/callbacks/base'
-import type { LLMResult } from '@langchain/core/outputs'
-import { log } from '../logging.js'
+import { BaseCallbackHandler } from "@langchain/core/callbacks/base"
+import type { LLMResult } from "@langchain/core/outputs"
+import { log } from "../logging.js"
 
 function getReasoning(content: unknown): string[] {
 	if (!Array.isArray(content)) {
@@ -26,14 +26,14 @@ function getReasoning(content: unknown): string[] {
 	}
 
 	return content.flatMap((block: unknown) => {
-		if (typeof block !== 'object' || block === null) {
+		if (typeof block !== "object" || block === null) {
 			return []
 		}
 
-		const isReasoning = 'type' in block && block.type === 'reasoning'
-		const reasoning = 'reasoning' in block ? block.reasoning : undefined
+		const isReasoning = "type" in block && block.type === "reasoning"
+		const reasoning = "reasoning" in block ? block.reasoning : undefined
 
-		if (isReasoning && typeof reasoning === 'string' && reasoning.trim()) {
+		if (isReasoning && typeof reasoning === "string" && reasoning.trim()) {
 			return [reasoning]
 		}
 
@@ -42,38 +42,38 @@ function getReasoning(content: unknown): string[] {
 }
 
 export class PinoLangChainHandler extends BaseCallbackHandler {
-	name = 'pino_langchain'
+	name = "pino_langchain"
 
 	constructor(private readonly chatId: number) {
 		super()
 	}
 
 	handleChatModelStart(_model: unknown, _messages: unknown, runId: string): void {
-		log.debug({ chatId: this.chatId, runId }, 'LangChain model started')
+		log.debug({ chatId: this.chatId, runId }, "LangChain model started")
 	}
 
 	handleLLMEnd(output: LLMResult, runId: string): void {
 		for (const generation of output.generations.flat()) {
-			if (!('message' in generation)) {
+			if (!("message" in generation)) {
 				continue
 			}
 
 			const message: unknown = generation.message
 
-			if (typeof message !== 'object' || message === null || !('content' in message)) {
+			if (typeof message !== "object" || message === null || !("content" in message)) {
 				continue
 			}
 
 			for (const reasoning of getReasoning(message.content)) {
-				log.debug({ chatId: this.chatId, runId, reasoning }, 'LangChain model reasoning')
+				log.debug({ chatId: this.chatId, runId, reasoning }, "LangChain model reasoning")
 			}
 		}
 
-		log.debug({ chatId: this.chatId, runId }, 'LangChain model finished')
+		log.debug({ chatId: this.chatId, runId }, "LangChain model finished")
 	}
 
 	handleLLMError(err: Error, runId: string): void {
-		log.error({ error: err, chatId: this.chatId, runId }, 'LangChain model failed')
+		log.error({ error: err, chatId: this.chatId, runId }, "LangChain model failed")
 	}
 
 	handleToolStart(
@@ -85,18 +85,18 @@ export class PinoLangChainHandler extends BaseCallbackHandler {
 		_metadata?: Record<string, unknown>,
 		runName?: string
 	): void {
-		log.debug({ chatId: this.chatId, runId, tool: runName, input }, 'LangChain tool started')
+		log.debug({ chatId: this.chatId, runId, tool: runName, input }, "LangChain tool started")
 	}
 
 	handleToolEnd(_output: unknown, runId: string): void {
-		log.debug({ chatId: this.chatId, runId }, 'LangChain tool finished')
+		log.debug({ chatId: this.chatId, runId }, "LangChain tool finished")
 	}
 
 	handleToolError(err: Error, runId: string): void {
-		log.error({ error: err, chatId: this.chatId, runId }, 'LangChain tool failed')
+		log.error({ error: err, chatId: this.chatId, runId }, "LangChain tool failed")
 	}
 
 	handleChainError(err: Error, runId: string): void {
-		log.error({ error: err, chatId: this.chatId, runId }, 'LangChain chain failed')
+		log.error({ error: err, chatId: this.chatId, runId }, "LangChain chain failed")
 	}
 }

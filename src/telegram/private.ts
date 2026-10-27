@@ -16,19 +16,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { Context, Filter } from 'grammy'
-import { createPrivateChatAgent } from '../agent/agent.js'
-import { log } from '../logging.js'
-import { PinoLangChainHandler } from '../agent/logging.js'
-import { getPrivateChatHistory } from '../chat/chat.js'
-import { toModelMessage } from '../chat/message.js'
-import { getTelegramAttachments } from './attachment.js'
-import { privateResponseSchema } from '../chat/response.js'
-import { sendTelegramResponse } from './response.js'
+import type { Context, Filter } from "grammy"
+import { createPrivateChatAgent } from "../agent/agent.js"
+import { log } from "../logging.js"
+import { PinoLangChainHandler } from "../agent/logging.js"
+import { getPrivateChatHistory } from "../chat/chat.js"
+import { toModelMessage } from "../chat/message.js"
+import { getTelegramAttachments } from "./attachment.js"
+import { privateResponseSchema } from "../chat/response.js"
+import { sendTelegramResponse } from "./response.js"
 
 const agent = await createPrivateChatAgent()
 
-export async function handlePrivateMessage(ctx: Filter<Context, 'message'>): Promise<void> {
+export async function handlePrivateMessage(ctx: Filter<Context, "message">): Promise<void> {
 	const chatId = ctx.chat.id
 
 	const text = ctx.message.text ?? ctx.message.caption
@@ -46,7 +46,7 @@ export async function handlePrivateMessage(ctx: Filter<Context, 'message'>): Pro
 			return
 		}
 
-		const placeholder = images.length ? '[imagen sin texto]' : '[archivo sin texto]'
+		const placeholder = images.length ? "[imagen sin texto]" : "[archivo sin texto]"
 		history.addUserMessage(text ?? placeholder, images, files)
 		const historySnapshot = history.messages
 		const messages = historySnapshot.map(toModelMessage)
@@ -57,7 +57,7 @@ export async function handlePrivateMessage(ctx: Filter<Context, 'message'>): Pro
 				configurable: {
 					chat: {
 						id: history.chatId.value,
-						type: 'private'
+						type: "private"
 					}
 				}
 			}
@@ -65,15 +65,15 @@ export async function handlePrivateMessage(ctx: Filter<Context, 'message'>): Pro
 		const answer = privateResponseSchema.parse(result.structuredResponse)
 
 		if (!answer.text.trim() && answer.media.length === 0) {
-			throw new Error('The model returned an empty answer')
+			throw new Error("The model returned an empty answer")
 		}
 
 		for await (const sent of sendTelegramResponse(ctx, answer)) {
-			log.trace({ sent, chatId }, 'Sent assistant message')
+			log.trace({ sent, chatId }, "Sent assistant message")
 			await history.addAssistantMessage(sent.text, sent.isText ? undefined : sent.text)
 		}
 	} catch (error) {
-		log.error({ err: error, chatId }, 'Failed to answer Telegram message')
-		await ctx.reply('No he podido responder ahora. Inténtalo de nuevo en un momento.')
+		log.error({ err: error, chatId }, "Failed to answer Telegram message")
+		await ctx.reply("No he podido responder ahora. Inténtalo de nuevo en un momento.")
 	}
 }

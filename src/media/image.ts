@@ -16,12 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { execFile } from 'node:child_process'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import path from 'node:path'
-import { promisify } from 'node:util'
-import { z } from 'zod'
+import { execFile } from "node:child_process"
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import path from "node:path"
+import { promisify } from "node:util"
+import { z } from "zod"
 
 export const maxImageDimension = 1024
 const run = promisify(execFile)
@@ -36,36 +36,36 @@ const imageDimensionsSchema = z.object({
 		.min(1)
 })
 const imageExtensions = new Map([
-	['image/jpeg', 'jpg'],
-	['image/png', 'png'],
-	['image/webp', 'webp']
+	["image/jpeg", "jpg"],
+	["image/png", "png"],
+	["image/webp", "webp"]
 ])
 
 export async function resizeImage(bytes: Buffer, mimeType: string): Promise<Buffer> {
 	const extension = imageExtensions.get(mimeType)
 
 	if (!extension) {
-		throw new Error('Unsupported image format for resizing')
+		throw new Error("Unsupported image format for resizing")
 	}
 
-	const directory = await mkdtemp(path.join(tmpdir(), 'nymph-image-'))
+	const directory = await mkdtemp(path.join(tmpdir(), "nymph-image-"))
 
 	try {
 		const input = path.join(directory, `input.${extension}`)
 		await writeFile(input, bytes)
 		const { stdout } = await run(
-			'ffprobe',
+			"ffprobe",
 			[
-				'-v',
-				'error',
-				'-protocol_whitelist',
-				'file,pipe',
-				'-select_streams',
-				'v:0',
-				'-show_entries',
-				'stream=width,height',
-				'-of',
-				'json',
+				"-v",
+				"error",
+				"-protocol_whitelist",
+				"file,pipe",
+				"-select_streams",
+				"v:0",
+				"-show_entries",
+				"stream=width,height",
+				"-of",
+				"json",
 				input
 			],
 			{ timeout: 30_000, maxBuffer: 1024 * 1024 }
@@ -79,21 +79,21 @@ export async function resizeImage(bytes: Buffer, mimeType: string): Promise<Buff
 
 		const output = path.join(directory, `resized.${extension}`)
 		await run(
-			'ffmpeg',
+			"ffmpeg",
 			[
-				'-hide_banner',
-				'-loglevel',
-				'error',
-				'-nostdin',
-				'-protocol_whitelist',
-				'file,pipe',
-				'-i',
+				"-hide_banner",
+				"-loglevel",
+				"error",
+				"-nostdin",
+				"-protocol_whitelist",
+				"file,pipe",
+				"-i",
 				input,
-				'-vf',
+				"-vf",
 				`scale=w='min(${maxImageDimension},iw)':h='min(${maxImageDimension},ih)':force_original_aspect_ratio=decrease`,
-				'-frames:v',
-				'1',
-				...(extension === 'jpg' ? ['-q:v', '3'] : []),
+				"-frames:v",
+				"1",
+				...(extension === "jpg" ? ["-q:v", "3"] : []),
 				output
 			],
 			{ timeout: 30_000, maxBuffer: 1024 * 1024 }
@@ -101,7 +101,7 @@ export async function resizeImage(bytes: Buffer, mimeType: string): Promise<Buff
 
 		return await readFile(output)
 	} catch {
-		throw new Error('Failed to resize image; check that ffmpeg is installed and the file is valid')
+		throw new Error("Failed to resize image; check that ffmpeg is installed and the file is valid")
 	} finally {
 		await rm(directory, { recursive: true, force: true })
 	}

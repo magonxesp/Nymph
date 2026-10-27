@@ -16,10 +16,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { z } from 'zod'
-import { XmlBooruClient } from './xmlbooru.js'
-import type { GetPostsOptions, Posts } from './post.js'
-import type { Tag } from './tag.js'
+import { z } from "zod"
+import { XmlBooruClient } from "./xmlbooru.js"
+import type { GetPostsOptions, Posts } from "./post.js"
+import type { Tag } from "./tag.js"
 
 export type MoebooruClientOptions = {
 	baseUrl?: string
@@ -27,7 +27,7 @@ export type MoebooruClientOptions = {
 
 export class MoebooruClient extends XmlBooruClient {
 	public constructor(options: MoebooruClientOptions = {}) {
-		super(options.baseUrl ?? 'https://yande.re/')
+		super(options.baseUrl ?? "https://yande.re/")
 	}
 
 	public override async getPosts(tags: string | string[], options: GetPostsOptions = {}): Promise<Posts> {
@@ -39,13 +39,13 @@ export class MoebooruClient extends XmlBooruClient {
 		}
 
 		if (changeId !== undefined) {
-			throw new Error('Moebooru does not support changeId searches')
+			throw new Error("Moebooru does not support changeId searches")
 		}
 
-		const url = new URL('post.xml', this.baseUrl)
-		url.searchParams.set('tags', searchTags.join(' ').trim())
-		url.searchParams.set('limit', String(limit))
-		url.searchParams.set('page', String(page + 1))
+		const url = new URL("post.xml", this.baseUrl)
+		url.searchParams.set("tags", searchTags.join(" ").trim())
+		url.searchParams.set("limit", String(limit))
+		url.searchParams.set("page", String(page + 1))
 		const response = await fetch(url)
 
 		if (!response.ok) {
@@ -56,10 +56,10 @@ export class MoebooruClient extends XmlBooruClient {
 	}
 
 	public override async autocompleteTags(query: string): Promise<Tag[]> {
-		const url = new URL('tag.json', this.baseUrl)
-		url.searchParams.set('name', `${query}*`)
-		url.searchParams.set('order', 'count')
-		url.searchParams.set('limit', '20')
+		const url = new URL("tag.json", this.baseUrl)
+		url.searchParams.set("name", `${query}*`)
+		url.searchParams.set("order", "count")
+		url.searchParams.set("limit", "20")
 		const response = await fetch(url)
 
 		if (!response.ok) {
@@ -75,18 +75,18 @@ export class MoebooruClient extends XmlBooruClient {
 
 export class KonachanClient extends MoebooruClient {
 	public constructor(options: MoebooruClientOptions = {}) {
-		super({ baseUrl: 'https://konachan.com/', ...options })
+		super({ baseUrl: "https://konachan.com/", ...options })
 	}
 }
 
 export class KonachanNetClient extends MoebooruClient {
 	public constructor(options: MoebooruClientOptions = {}) {
-		super({ baseUrl: 'https://konachan.net/', ...options })
+		super({ baseUrl: "https://konachan.net/", ...options })
 	}
 }
 
 export class YandereClient extends MoebooruClient {
 	public constructor(options: MoebooruClientOptions = {}) {
-		super({ baseUrl: 'https://yande.re/', ...options })
+		super({ baseUrl: "https://yande.re/", ...options })
 	}
 }

@@ -16,26 +16,26 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { Message, User } from 'grammy/types'
-import type { GroupMessage } from '../chat/group.js'
+import type { Message, User } from "grammy/types"
+import type { GroupMessage } from "../chat/group.js"
 
 export type GroupMessageContext = {
 	message: Message
-	me: Pick<User, 'id' | 'first_name' | 'last_name'>
+	me: Pick<User, "id" | "first_name" | "last_name">
 }
 
-export type GroupMessageOptions = Partial<Pick<GroupMessage, 'text' | 'images' | 'files' | 'mentions'>> & {
+export type GroupMessageOptions = Partial<Pick<GroupMessage, "text" | "images" | "files" | "mentions">> & {
 	message?: Message
 }
 
 export function createGroupMessage(
 	ctx: GroupMessageContext,
-	role: GroupMessage['role'],
+	role: GroupMessage["role"],
 	options: GroupMessageOptions = {}
 ): GroupMessage {
 	const message = options.message ?? ctx.message
-	const sender = role === 'assistant' ? ctx.me : message.from
-	const senderChat = role === 'user' ? message.sender_chat : undefined
+	const sender = role === "assistant" ? ctx.me : message.from
+	const senderChat = role === "user" ? message.sender_chat : undefined
 	const text = options.text ?? message.text ?? message.caption
 	const mentionEntities = message.text ? message.entities : message.caption_entities
 	const { images, files } = options
@@ -45,11 +45,11 @@ export function createGroupMessage(
 			return String(senderChat.id)
 		}
 
-		return String(sender?.id ?? 'unknown')
+		return String(sender?.id ?? "unknown")
 	}
 
 	const mapSenderName = (): string => {
-		if (role === 'assistant') {
+		if (role === "assistant") {
 			return ctx.me.first_name
 		}
 
@@ -58,10 +58,10 @@ export function createGroupMessage(
 		}
 
 		if (sender) {
-			return [sender.first_name, sender.last_name].filter(Boolean).join(' ')
+			return [sender.first_name, sender.last_name].filter(Boolean).join(" ")
 		}
 
-		return 'Desconocido'
+		return "Desconocido"
 	}
 
 	const mapText = (): string => {
@@ -70,24 +70,24 @@ export function createGroupMessage(
 		}
 
 		if (images?.length) {
-			return '[imagen sin texto]'
+			return "[imagen sin texto]"
 		}
 
 		if (files?.length) {
-			return '[archivo sin texto]'
+			return "[archivo sin texto]"
 		}
 
-		return '[mensaje sin texto]'
+		return "[mensaje sin texto]"
 	}
 
-	const mapMentions = (): GroupMessage['mentions'] => {
+	const mapMentions = (): GroupMessage["mentions"] => {
 		return (
 			options.mentions ??
 			(mentionEntities ?? [])
-				.filter((entity) => entity.type === 'mention' || entity.type === 'text_mention')
+				.filter((entity) => entity.type === "mention" || entity.type === "text_mention")
 				.map((entity) => ({
-					text: (text ?? '').slice(entity.offset, entity.offset + entity.length),
-					userId: entity.type === 'text_mention' ? String(entity.user.id) : null
+					text: (text ?? "").slice(entity.offset, entity.offset + entity.length),
+					userId: entity.type === "text_mention" ? String(entity.user.id) : null
 				}))
 		)
 	}

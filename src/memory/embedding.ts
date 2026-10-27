@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { OpenAIEmbeddings } from '@langchain/openai'
-import { memoryEmbeddingModel, openAIApiKey } from '../env.js'
+import { OpenAIEmbeddings } from "@langchain/openai"
+import { memoryEmbeddingModel, openAIApiKey } from "../env.js"
 
 export class Embedding {
 	public constructor(public readonly value: readonly number[]) {
@@ -27,19 +27,19 @@ export class Embedding {
 
 	private validate(): void {
 		if (this.value.length === 0) {
-			throw new Error('The embedding must not be empty')
+			throw new Error("The embedding must not be empty")
 		}
 
 		const hasFiniteValues = this.value.every((value) => Number.isFinite(value))
 
 		if (!hasFiniteValues) {
-			throw new Error('The embedding values must be finite')
+			throw new Error("The embedding values must be finite")
 		}
 
 		const hasNonzeroValue = this.value.some((value) => value !== 0)
 
 		if (!hasNonzeroValue) {
-			throw new Error('The embedding must not be a zero vector')
+			throw new Error("The embedding must not be a zero vector")
 		}
 	}
 }
@@ -52,7 +52,7 @@ export async function embedMemoryTexts(texts: string[]): Promise<Embedding[]> {
 	}
 
 	if (!openAIApiKey) {
-		throw new Error('NYMPH_OPENAI_API_KEY is required')
+		throw new Error("NYMPH_OPENAI_API_KEY is required")
 	}
 
 	model ??= new OpenAIEmbeddings({
@@ -62,7 +62,7 @@ export async function embedMemoryTexts(texts: string[]): Promise<Embedding[]> {
 	const vectors = await model.embedDocuments(texts)
 
 	if (vectors.length !== texts.length) {
-		throw new Error('The embedding model returned an unexpected number of vectors')
+		throw new Error("The embedding model returned an unexpected number of vectors")
 	}
 
 	return vectors.map((vector) => new Embedding(vector))

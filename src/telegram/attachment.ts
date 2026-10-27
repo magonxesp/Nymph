@@ -16,12 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { Api } from 'grammy'
-import type { Message } from 'grammy/types'
-import { supportedImageMimeTypes, supportedFileMimeTypes } from '../agent/mime-types.js'
-import { resizeImage } from '../media/image.js'
-import { getAnimationFrames } from '../media/animation.js'
-import type { ChatAttachments } from '../chat/attachment.js'
+import type { Api } from "grammy"
+import type { Message } from "grammy/types"
+import { supportedImageMimeTypes, supportedFileMimeTypes } from "../agent/mime-types.js"
+import { resizeImage } from "../media/image.js"
+import { getAnimationFrames } from "../media/animation.js"
+import type { ChatAttachments } from "../chat/attachment.js"
 
 export const maxAttachmentBytes = 10 * 1024 * 1024
 
@@ -33,7 +33,7 @@ function getAttachment(message: Message) {
 		: undefined
 
 	if (photo) {
-		return { ...photo, mime_type: 'image/jpeg', file_name: 'photo.jpg' }
+		return { ...photo, mime_type: "image/jpeg", file_name: "photo.jpg" }
 	}
 
 	if (message.animation) {
@@ -53,24 +53,24 @@ function getAttachment(message: Message) {
 	}
 
 	if (message.voice) {
-		return { ...message.voice, file_name: 'voice.ogg' }
+		return { ...message.voice, file_name: "voice.ogg" }
 	}
 
 	if (message.video_note) {
 		return {
 			...message.video_note,
-			mime_type: 'video/mp4',
-			file_name: 'video.mp4'
+			mime_type: "video/mp4",
+			file_name: "video.mp4"
 		}
 	}
 
 	if (message.sticker) {
 		const sticker = message.sticker
 		const mimeType = sticker.is_video
-			? 'video/webm'
+			? "video/webm"
 			: sticker.is_animated
-				? 'application/x-tgsticker'
-				: 'image/webp'
+				? "application/x-tgsticker"
+				: "image/webp"
 		return { ...sticker, mime_type: mimeType }
 	}
 
@@ -80,7 +80,7 @@ function getAttachment(message: Message) {
 // null means the entire message must be silently discarded (unsupported type or oversized).
 export async function getTelegramAttachments(
 	message: Message,
-	api: Pick<Api, 'getFile' | 'token'>
+	api: Pick<Api, "getFile" | "token">
 ): Promise<ChatAttachments | null> {
 	const attachment = getAttachment(message)
 
@@ -92,11 +92,11 @@ export async function getTelegramAttachments(
 		return null
 	}
 
-	const declaredMimeType = attachment.mime_type?.split(';')[0]?.trim().toLowerCase()
-	const hasGifFilename = attachment.file_name?.toLowerCase().endsWith('.gif') ?? false
-	const inferredMimeType = hasGifFilename ? 'image/gif' : message.animation ? 'video/mp4' : undefined
+	const declaredMimeType = attachment.mime_type?.split(";")[0]?.trim().toLowerCase()
+	const hasGifFilename = attachment.file_name?.toLowerCase().endsWith(".gif") ?? false
+	const inferredMimeType = hasGifFilename ? "image/gif" : message.animation ? "video/mp4" : undefined
 	const mimeType = declaredMimeType || inferredMimeType
-	const isMp4Animation = Boolean(message.animation) && mimeType === 'video/mp4'
+	const isMp4Animation = Boolean(message.animation) && mimeType === "video/mp4"
 	const isSupportedImage = mimeType !== undefined && supportedImageMimeTypes.has(mimeType)
 	const isSupportedFile = mimeType !== undefined && supportedFileMimeTypes.has(mimeType)
 
@@ -111,7 +111,7 @@ export async function getTelegramAttachments(
 	}
 
 	if (!file.file_path) {
-		throw new Error('Telegram did not return an attachment download path')
+		throw new Error("Telegram did not return an attachment download path")
 	}
 
 	let bytes: Buffer
@@ -123,10 +123,10 @@ export async function getTelegramAttachments(
 		})
 
 		if (!response.ok || !response.body) {
-			throw new Error('Attachment download failed')
+			throw new Error("Attachment download failed")
 		}
 
-		const contentLength = Number(response.headers.get('content-length'))
+		const contentLength = Number(response.headers.get("content-length"))
 
 		if (contentLength > maxAttachmentBytes) {
 			await response.body.cancel()
@@ -157,25 +157,25 @@ export async function getTelegramAttachments(
 		bytes = Buffer.concat(chunks, size)
 	} catch {
 		// Fetch errors may contain the URL, which includes the bot token.
-		throw new Error('Failed to download the Telegram attachment')
+		throw new Error("Failed to download the Telegram attachment")
 	}
 
-	const filename = attachment.file_name ?? file.file_path.split('/').at(-1) ?? 'attachment'
+	const filename = attachment.file_name ?? file.file_path.split("/").at(-1) ?? "attachment"
 
-	if (mimeType === 'image/gif' || isMp4Animation) {
-		const signature = bytes.subarray(0, 6).toString('ascii')
-		const isGif = signature === 'GIF87a' || signature === 'GIF89a'
-		const format = isGif || !isMp4Animation ? 'gif' : 'mp4'
+	if (mimeType === "image/gif" || isMp4Animation) {
+		const signature = bytes.subarray(0, 6).toString("ascii")
+		const isGif = signature === "GIF87a" || signature === "GIF89a"
+		const format = isGif || !isMp4Animation ? "gif" : "mp4"
 		return { images: await getAnimationFrames(bytes, format), files: [] }
 	}
 
 	if (isSupportedImage) {
 		const resizedImage = await resizeImage(bytes, mimeType)
-		const data = resizedImage.toString('base64')
+		const data = resizedImage.toString("base64")
 		return { images: [`data:${mimeType};base64,${data}`], files: [] }
 	}
 
-	const data = bytes.toString('base64')
+	const data = bytes.toString("base64")
 
 	return {
 		images: [],

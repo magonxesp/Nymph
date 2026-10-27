@@ -16,24 +16,24 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { tool } from 'langchain'
-import { skills } from './skill.js'
-import z from 'zod'
-import fs from 'node:fs/promises'
-import { memoryTools } from '../memory/tools.js'
-import { booruTools } from '../booru/tools.js'
+import { tool } from "langchain"
+import { skills } from "./skill.js"
+import z from "zod"
+import fs from "node:fs/promises"
+import { memoryTools } from "../memory/tools.js"
+import { booruTools } from "../booru/tools.js"
 
 export const readTextFile = tool(async ({ path }) => await fs.readFile(path), {
-	name: 'read_text_file',
-	description: 'Lee un fichero de texto',
-	schema: z.object({ path: z.string().describe('Path al fichero') })
+	name: "read_text_file",
+	description: "Lee un fichero de texto",
+	schema: z.object({ path: z.string().describe("Path al fichero") })
 })
 
-export const getSkill = tool(async ({ name }) => skills.get(name) ?? 'Skill no disponible.', {
-	name: 'get_skill',
+export const getSkill = tool(async ({ name }) => skills.get(name) ?? "Skill no disponible.", {
+	name: "get_skill",
 	description:
-		'Carga las instrucciones completas de una skill disponible cuando la peticion del usuario lo requiera.',
-	schema: z.object({ name: z.string().describe('Nombre de la skill') })
+		"Carga las instrucciones completas de una skill disponible cuando la peticion del usuario lo requiera.",
+	schema: z.object({ name: z.string().describe("Nombre de la skill") })
 })
 
 const tools = [getSkill, readTextFile, ...booruTools, ...memoryTools]

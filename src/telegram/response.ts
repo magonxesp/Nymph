@@ -1,7 +1,7 @@
-import type { Context } from 'grammy'
-import type { MessageEntity } from 'grammy/types'
-import type { ResponseMedia } from '../chat/response.js'
-import { log } from '../logging.js'
+import type { Context } from "grammy"
+import type { MessageEntity } from "grammy/types"
+import type { ResponseMedia } from "../chat/response.js"
+import { log } from "../logging.js"
 
 type TelegramResponse = {
 	text: string
@@ -37,18 +37,18 @@ export async function* sendTelegramResponse(ctx: Context, response: TelegramResp
 
 		try {
 			switch (media.type) {
-				case 'photo':
+				case "photo":
 					message = await ctx.replyWithPhoto(media.url, replyOptions)
 					break
-				case 'animation':
+				case "animation":
 					message = await ctx.replyWithAnimation(media.url, replyOptions)
 					break
-				case 'video':
+				case "video":
 					message = await ctx.replyWithVideo(media.url, replyOptions)
 					break
 			}
 		} catch (error) {
-			log.warn({ err: error, chatId: ctx.chat?.id }, 'Failed to send Telegram media; sending original URL')
+			log.warn({ err: error, chatId: ctx.chat?.id }, "Failed to send Telegram media; sending original URL")
 			message = await ctx.reply(media.url, replyOptions)
 		}
 

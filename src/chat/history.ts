@@ -16,8 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { EventEmitter } from 'node:events'
-import type { ChatId } from './id.js'
+import { EventEmitter } from "node:events"
+import type { ChatId } from "./id.js"
 
 export type ChatHistorySnapshot<Message> = {
 	chatId: ChatId
@@ -53,7 +53,7 @@ export class ChatHistory<Message> extends EventEmitter<{
 			const snapshot = this.snapshot
 
 			this.lastSnapshotMessageSequence = this.messageSequence
-			this.emit('snapshot', snapshot)
+			this.emit("snapshot", snapshot)
 		}
 	}
 

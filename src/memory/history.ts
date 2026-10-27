@@ -16,12 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { ChatHistorySnapshot } from '../chat/history.js'
-import type { ChatMessage } from '../chat/chat.js'
-import type { GroupMessage } from '../chat/group.js'
+import type { ChatHistorySnapshot } from "../chat/history.js"
+import type { ChatMessage } from "../chat/chat.js"
+import type { GroupMessage } from "../chat/group.js"
 
 export type MemoryHistoryMessage = {
-	role: 'user' | 'assistant'
+	role: "user" | "assistant"
 	text: string
 	id?: number
 	senderId?: string
@@ -35,7 +35,7 @@ export type MemoryHistorySnapshot = ChatHistorySnapshot<ChatMessage | GroupMessa
 
 export function createMemoryHistory(snapshot: MemoryHistorySnapshot): MemoryHistoryMessage[] {
 	return snapshot.messages.map((message) => {
-		if ('text' in message) {
+		if ("text" in message) {
 			return {
 				role: message.role,
 				text: message.text,

@@ -16,25 +16,25 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { Context, Filter } from 'grammy'
-import { readFile } from 'node:fs/promises'
-import path from 'node:path'
-import { createGroupChatAgent } from '../agent/agent.js'
-import { prepareGroupReplies } from './group-response.js'
-import { log } from '../logging.js'
-import { PinoLangChainHandler } from '../agent/logging.js'
-import { getGroupChatHistory } from '../chat/group.js'
-import { createGroupMessage } from './group-message.js'
-import { compileGroupTriggers, matchesGroupTrigger, mentionsBot } from '../chat/group-triggers.js'
-import { rootDir } from '../env.js'
-import { getTelegramAttachments } from './attachment.js'
-import { sendTelegramResponse } from './response.js'
+import type { Context, Filter } from "grammy"
+import { readFile } from "node:fs/promises"
+import path from "node:path"
+import { createGroupChatAgent } from "../agent/agent.js"
+import { prepareGroupReplies } from "./group-response.js"
+import { log } from "../logging.js"
+import { PinoLangChainHandler } from "../agent/logging.js"
+import { getGroupChatHistory } from "../chat/group.js"
+import { createGroupMessage } from "./group-message.js"
+import { compileGroupTriggers, matchesGroupTrigger, mentionsBot } from "../chat/group-triggers.js"
+import { rootDir } from "../env.js"
+import { getTelegramAttachments } from "./attachment.js"
+import { sendTelegramResponse } from "./response.js"
 
-const groupTriggers = compileGroupTriggers(await readFile(path.join(rootDir, 'group-triggers.txt'), 'utf8'))
+const groupTriggers = compileGroupTriggers(await readFile(path.join(rootDir, "group-triggers.txt"), "utf8"))
 
 const agent = await createGroupChatAgent()
 
-function isGroupTriggered(ctx: Filter<Context, 'message'>): boolean {
+function isGroupTriggered(ctx: Filter<Context, "message">): boolean {
 	const triggeredByReply = ctx.message.reply_to_message?.from?.id === ctx.me.id
 
 	if (triggeredByReply) {
@@ -54,7 +54,7 @@ function isGroupTriggered(ctx: Filter<Context, 'message'>): boolean {
 	return triggeredByPattern || triggeredByMention
 }
 
-export async function handleGroupMessage(ctx: Filter<Context, 'message'>): Promise<void> {
+export async function handleGroupMessage(ctx: Filter<Context, "message">): Promise<void> {
 	const chatId = ctx.chat.id
 	const history = getGroupChatHistory(`telegram:${chatId}`)
 
@@ -65,7 +65,7 @@ export async function handleGroupMessage(ctx: Filter<Context, 'message'>): Promi
 			return
 		}
 
-		history.addMessage(createGroupMessage(ctx, 'user', attachments))
+		history.addMessage(createGroupMessage(ctx, "user", attachments))
 
 		if (!isGroupTriggered(ctx)) {
 			return
@@ -80,7 +80,7 @@ export async function handleGroupMessage(ctx: Filter<Context, 'message'>): Promi
 				configurable: {
 					chat: {
 						id: history.chatId.value,
-						type: 'group'
+						type: "group"
 					}
 				}
 			}
@@ -89,7 +89,7 @@ export async function handleGroupMessage(ctx: Filter<Context, 'message'>): Promi
 
 		for (const answer of answers) {
 			for await (const sent of sendTelegramResponse(ctx, answer)) {
-				log.trace({ sent, chatId }, 'Sent assistant message')
+				log.trace({ sent, chatId }, "Sent assistant message")
 				await history.addAssistantMessage(
 					ctx,
 					{
@@ -102,6 +102,6 @@ export async function handleGroupMessage(ctx: Filter<Context, 'message'>): Promi
 			}
 		}
 	} catch (error) {
-		log.error({ err: error, chatId }, 'Failed to answer Telegram group message')
+		log.error({ err: error, chatId }, "Failed to answer Telegram group message")
 	}
 }

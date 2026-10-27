@@ -16,11 +16,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { GelBooruClient, SafeBooruClient, Rule34Client } from './gelbooru.js'
-import { DanBooruClient, SonoharaClient } from './danbooru.js'
-import { KonachanClient, KonachanNetClient, YandereClient } from './moebooru.js'
-import type { GetPostsOptions, Post, Posts } from './post.js'
-import type { Tag } from './tag.js'
+import { GelBooruClient, SafeBooruClient, Rule34Client } from "./gelbooru.js"
+import { DanBooruClient, SonoharaClient } from "./danbooru.js"
+import { KonachanClient, KonachanNetClient, YandereClient } from "./moebooru.js"
+import type { GetPostsOptions, Post, Posts } from "./post.js"
+import type { Tag } from "./tag.js"
 
 export interface BooruClient {
 	getPosts(tags: string | string[], options?: GetPostsOptions): Promise<Posts>
@@ -29,36 +29,36 @@ export interface BooruClient {
 }
 
 export type BooruName =
-	'gelbooru' | 'safebooru' | 'rule34' | 'danbooru' | 'sonohara' | 'konachan' | 'konachan.net' | 'yandere'
+	"gelbooru" | "safebooru" | "rule34" | "danbooru" | "sonohara" | "konachan" | "konachan.net" | "yandere"
 
 export const booruNames = [
-	'gelbooru',
-	'safebooru',
-	'rule34',
-	'danbooru',
-	'sonohara',
-	'konachan',
-	'konachan.net',
-	'yandere'
+	"gelbooru",
+	"safebooru",
+	"rule34",
+	"danbooru",
+	"sonohara",
+	"konachan",
+	"konachan.net",
+	"yandere"
 ] as const satisfies readonly BooruName[]
 
 export function getBooruClient(booru: BooruName): BooruClient {
 	switch (booru) {
-		case 'gelbooru':
+		case "gelbooru":
 			return new GelBooruClient()
-		case 'safebooru':
+		case "safebooru":
 			return new SafeBooruClient()
-		case 'rule34':
+		case "rule34":
 			return new Rule34Client()
-		case 'danbooru':
+		case "danbooru":
 			return new DanBooruClient()
-		case 'sonohara':
+		case "sonohara":
 			return new SonoharaClient()
-		case 'konachan':
+		case "konachan":
 			return new KonachanClient()
-		case 'konachan.net':
+		case "konachan.net":
 			return new KonachanNetClient()
-		case 'yandere':
+		case "yandere":
 			return new YandereClient()
 		default:
 			throw new Error(`Unsupported booru: ${booru}`)

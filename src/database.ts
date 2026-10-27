@@ -16,16 +16,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import 'dotenv/config'
-import knex from 'knex'
+import "dotenv/config"
+import knex from "knex"
 
 export const database = knex({
-	client: 'pg',
+	client: "pg",
 	connection: {
-		host: process.env.NYMPH_POSTGRES_HOST ?? 'localhost',
+		host: process.env.NYMPH_POSTGRES_HOST ?? "localhost",
 		port: Number(process.env.NYMPH_POSTGRES_PORT ?? 5432),
-		database: process.env.NYMPH_POSTGRES_DB ?? 'nymph',
-		user: process.env.NYMPH_POSTGRES_USER ?? 'nymph',
+		database: process.env.NYMPH_POSTGRES_DB ?? "nymph",
+		user: process.env.NYMPH_POSTGRES_USER ?? "nymph",
 		password: process.env.NYMPH_POSTGRES_PASSWORD
 	}
 })

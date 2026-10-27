@@ -16,9 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import 'dotenv/config'
-import { bot } from './telegram/bot.js'
-import { log } from './logging.js'
+import "dotenv/config"
+import { bot } from "./telegram/bot.js"
+import { log } from "./logging.js"
 
-log.info('Starting...')
+log.info("Starting...")
 await bot.start()

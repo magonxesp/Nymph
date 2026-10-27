@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { z } from 'zod'
+import { z } from "zod"
 
 export type MemoryResponse = {
 	memories: string[]
@@ -25,7 +25,7 @@ export type MemoryResponse = {
 export const memoryResponseSchema = z
 	.object({
 		memories: z
-			.array(z.string().min(1).describe('Texto breve y autónomo de un recuerdo'))
-			.describe('Recuerdos relevantes extraídos del historial; lista vacía si no hay ninguno')
+			.array(z.string().min(1).describe("Texto breve y autónomo de un recuerdo"))
+			.describe("Recuerdos relevantes extraídos del historial; lista vacía si no hay ninguno")
 	})
 	.strict() satisfies z.ZodType<MemoryResponse>

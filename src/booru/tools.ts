@@ -16,33 +16,33 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { tool } from 'langchain'
-import { z } from 'zod'
-import { booruNames, getBooruClient } from './client.js'
-import type { BooruName } from './client.js'
-import type { Post } from './post.js'
-import { downloadImages } from '../media/remote.js'
-import { log } from '../logging.js'
-import { Rule34Client } from './gelbooru.js'
+import { tool } from "langchain"
+import { z } from "zod"
+import { booruNames, getBooruClient } from "./client.js"
+import type { BooruName } from "./client.js"
+import type { Post } from "./post.js"
+import { downloadImages } from "../media/remote.js"
+import { log } from "../logging.js"
+import { Rule34Client } from "./gelbooru.js"
 
 const rule34Client = new Rule34Client()
 
-type ImageContent = { type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }
+type ImageContent = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }
 
 const booruSchema = z
 	.enum(booruNames)
-	.exclude(['rule34'])
-	.describe('Image board: konachan corresponde a konachan.com y yandere a yande.re')
-const tagSchema = z.string().trim().min(1).describe('Tag o tags separados por espacios para la búsqueda')
+	.exclude(["rule34"])
+	.describe("Image board: konachan corresponde a konachan.com y yandere a yande.re")
+const tagSchema = z.string().trim().min(1).describe("Tag o tags separados por espacios para la búsqueda")
 
 async function postImages(booru: BooruName, post: Post): Promise<ImageContent[]> {
-	const content: ImageContent[] = [{ type: 'text', text: JSON.stringify({ booru, post }) }]
+	const content: ImageContent[] = [{ type: "text", text: JSON.stringify({ booru, post }) }]
 	const url = post.file_url || post.sample_url || post.preview_url
 
 	if (!url) {
 		content.push({
-			type: 'text',
-			text: 'El post no tiene una imagen accesible.'
+			type: "text",
+			text: "El post no tiene una imagen accesible."
 		})
 		return content
 	}
@@ -51,13 +51,13 @@ async function postImages(booru: BooruName, post: Post): Promise<ImageContent[]>
 		const images = await downloadImages(url)
 
 		for (const image of images) {
-			content.push({ type: 'image_url', image_url: { url: image } })
+			content.push({ type: "image_url", image_url: { url: image } })
 		}
 	} catch (error) {
-		log.warn({ err: error, booru, postId: post.id }, 'Booru image download failed')
+		log.warn({ err: error, booru, postId: post.id }, "Booru image download failed")
 		content.push({
-			type: 'text',
-			text: 'No se pudo descargar la imagen para verla. Los metadatos y la URL siguen disponibles.'
+			type: "text",
+			text: "No se pudo descargar la imagen para verla. Los metadatos y la URL siguen disponibles."
 		})
 	}
 
@@ -65,7 +65,7 @@ async function postImages(booru: BooruName, post: Post): Promise<ImageContent[]>
 }
 
 function booruError(error: unknown, toolName: string) {
-	log.warn({ err: error, tool: toolName }, 'Booru tool failed')
+	log.warn({ err: error, tool: toolName }, "Booru tool failed")
 	return { error: error instanceof Error ? error.message : String(error) }
 }
 
@@ -74,13 +74,13 @@ export const booruAutocompleteTags = tool(
 		try {
 			return await getBooruClient(booru).autocompleteTags(tag)
 		} catch (error) {
-			return booruError(error, 'booru_autocomplete_tags')
+			return booruError(error, "booru_autocomplete_tags")
 		}
 	},
 	{
-		name: 'booru_autocomplete_tags',
+		name: "booru_autocomplete_tags",
 		description:
-			'Busca sugerencias de tags en el image board elegido. Usa el value para buscar imágenes. Para Rule34 usa sus herramientas propias.',
+			"Busca sugerencias de tags en el image board elegido. Usa el value para buscar imágenes. Para Rule34 usa sus herramientas propias.",
 		schema: z.object({ tag: tagSchema, booru: booruSchema }).strict()
 	}
 )
@@ -96,13 +96,13 @@ export const booruRandomPost = tool(
 
 			return await postImages(booru, post)
 		} catch (error) {
-			return booruError(error, 'booru_random_post')
+			return booruError(error, "booru_random_post")
 		}
 	},
 	{
-		name: 'booru_random_post',
+		name: "booru_random_post",
 		description:
-			'Trae una imagen aleatoria del image board elegido y entrega su contenido visual al modelo junto con los metadatos y la URL original. Las animaciones se muestran como fotogramas. Para Rule34 usa sus herramientas propias.',
+			"Trae una imagen aleatoria del image board elegido y entrega su contenido visual al modelo junto con los metadatos y la URL original. Las animaciones se muestran como fotogramas. Para Rule34 usa sus herramientas propias.",
 		schema: z.object({ tag: tagSchema, booru: booruSchema }).strict()
 	}
 )
@@ -116,7 +116,7 @@ export const booruPosts = tool(
 			})
 			const content: ImageContent[] = [
 				{
-					type: 'text',
+					type: "text",
 					text: JSON.stringify({
 						booru,
 						count: posts.count,
@@ -131,19 +131,19 @@ export const booruPosts = tool(
 
 			return content
 		} catch (error) {
-			return booruError(error, 'booru_posts')
+			return booruError(error, "booru_posts")
 		}
 	},
 	{
-		name: 'booru_posts',
+		name: "booru_posts",
 		description:
-			'Busca imágenes por tags en el image board elegido y entrega su contenido visual al modelo con metadatos y URLs originales. Las animaciones se muestran como fotogramas. Para Rule34 usa sus herramientas propias.',
+			"Busca imágenes por tags en el image board elegido y entrega su contenido visual al modelo con metadatos y URLs originales. Las animaciones se muestran como fotogramas. Para Rule34 usa sus herramientas propias.",
 		schema: z
 			.object({
 				tag: tagSchema,
 				booru: booruSchema,
-				page: z.number().int().min(0).default(0).describe('Página de resultados, empezando por cero'),
-				limit: z.number().int().min(1).max(5).default(3).describe('Máximo de imágenes a traer')
+				page: z.number().int().min(0).default(0).describe("Página de resultados, empezando por cero"),
+				limit: z.number().int().min(1).max(5).default(3).describe("Máximo de imágenes a traer")
 			})
 			.strict()
 	}
@@ -154,17 +154,17 @@ export const rule34AutocompleteTags = tool(
 		try {
 			return await rule34Client.autocompleteTags(input.tag)
 		} catch (error) {
-			log.warn({ error, tool: 'rule34_autocomplete_tags', input }, 'Rule34 autocomplete tags failed')
+			log.warn({ error, tool: "rule34_autocomplete_tags", input }, "Rule34 autocomplete tags failed")
 			return {
 				error: error instanceof Error ? error.message : String(error)
 			}
 		}
 	},
 	{
-		name: 'rule34_autocomplete_tags',
-		description: 'Busca sugerencias para un tag de Rule34. Usa el campo value de una sugerencia para buscar posts.',
+		name: "rule34_autocomplete_tags",
+		description: "Busca sugerencias para un tag de Rule34. Usa el campo value de una sugerencia para buscar posts.",
 		schema: z.object({
-			tag: z.string().min(1).describe('Tag incompleto que se quiere autocompletar')
+			tag: z.string().min(1).describe("Tag incompleto que se quiere autocompletar")
 		})
 	}
 )
@@ -180,18 +180,18 @@ export const rule34RandomPost = tool(
 
 			return post.file_url
 		} catch (error) {
-			log.warn({ error, tool: 'rule34_random_post', input }, 'Rule34 random post search failed')
+			log.warn({ error, tool: "rule34_random_post", input }, "Rule34 random post search failed")
 			return {
 				error: error instanceof Error ? error.message : String(error)
 			}
 		}
 	},
 	{
-		name: 'rule34_random_post',
+		name: "rule34_random_post",
 		description:
-			'Devuelve la URL original y el contenido visual de un post aleatorio de Rule34 que tenga el tag indicado. Las imágenes se descargan y redimensionan para poder verlas; las animaciones se muestran como fotogramas.',
+			"Devuelve la URL original y el contenido visual de un post aleatorio de Rule34 que tenga el tag indicado. Las imágenes se descargan y redimensionan para poder verlas; las animaciones se muestran como fotogramas.",
 		schema: z.object({
-			tag: z.string().min(1).describe('Tag de Rule34 usado para buscar el post')
+			tag: z.string().min(1).describe("Tag de Rule34 usado para buscar el post")
 		})
 	}
 )
@@ -204,19 +204,19 @@ export const rule34Posts = tool(
 				limit: input.limit
 			})
 		} catch (error) {
-			log.warn({ error, tool: 'rule34_posts', input }, 'Rule34 post search failed')
+			log.warn({ error, tool: "rule34_posts", input }, "Rule34 post search failed")
 			return {
 				error: error instanceof Error ? error.message : String(error)
 			}
 		}
 	},
 	{
-		name: 'rule34_posts',
-		description: 'Devuelve un array de posts de Rule34 que tenga el tag indicado.',
+		name: "rule34_posts",
+		description: "Devuelve un array de posts de Rule34 que tenga el tag indicado.",
 		schema: z.object({
-			tag: z.string().min(1).describe('Tag de Rule34 usado para buscar el post'),
-			page: z.number().min(0).describe('Numero de la pagina del dataset de los posts'),
-			limit: z.number().min(1).max(15).describe('Limite de la cantidad de posts que pueden haver en cada pagina')
+			tag: z.string().min(1).describe("Tag de Rule34 usado para buscar el post"),
+			page: z.number().min(0).describe("Numero de la pagina del dataset de los posts"),
+			limit: z.number().min(1).max(15).describe("Limite de la cantidad de posts que pueden haver en cada pagina")
 		})
 	}
 )

@@ -16,20 +16,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { tool } from 'langchain'
-import { z } from 'zod'
-import type { RunnableConfig } from '@langchain/core/runnables'
-import { log } from '../logging.js'
-import { createMemoryHistory } from './history.js'
-import { ChatId } from '../chat/id.js'
-import { getChatHistorySnapshot } from '../chat/snapshot.js'
-import type { ChatReference } from '../chat/snapshot.js'
-import { MemoryContent } from './content.js'
-import { embedMemoryTexts } from './embedding.js'
-import { MemoryId } from './id.js'
-import type { Memory } from './memory.js'
-import { MemoryRepository } from './repository.js'
-import { generateMemories } from './memory.js'
+import { tool } from "langchain"
+import { z } from "zod"
+import type { RunnableConfig } from "@langchain/core/runnables"
+import { log } from "../logging.js"
+import { createMemoryHistory } from "./history.js"
+import { ChatId } from "../chat/id.js"
+import { getChatHistorySnapshot } from "../chat/snapshot.js"
+import type { ChatReference } from "../chat/snapshot.js"
+import { MemoryContent } from "./content.js"
+import { embedMemoryTexts } from "./embedding.js"
+import { MemoryId } from "./id.js"
+import type { Memory } from "./memory.js"
+import { MemoryRepository } from "./repository.js"
+import { generateMemories } from "./memory.js"
 
 const repository = new MemoryRepository()
 
@@ -38,9 +38,9 @@ function memoryResult(memory: Memory) {
 }
 
 function memoryError(error: unknown, toolName: string) {
-	log.warn({ err: error, tool: toolName }, 'Memory tool failed')
+	log.warn({ err: error, tool: toolName }, "Memory tool failed")
 	return {
-		error: 'No se pudo completar la operación de memoria. No confirmes que se haya realizado.'
+		error: "No se pudo completar la operación de memoria. No confirmes que se haya realizado."
 	}
 }
 
@@ -48,7 +48,7 @@ function getConfiguredChat(config: RunnableConfig): ChatReference {
 	const chat: ChatReference | undefined = config.configurable?.chat
 
 	if (!chat) {
-		throw new Error('Chat configuration is required')
+		throw new Error("Chat configuration is required")
 	}
 
 	return chat
@@ -72,13 +72,13 @@ export const createMemory = tool(
 
 			return { memories: memories.map(memoryResult) }
 		} catch (error) {
-			return memoryError(error, 'create_memory')
+			return memoryError(error, "create_memory")
 		}
 	},
 	{
-		name: 'create_memory',
+		name: "create_memory",
 		description:
-			'Llama al agente de recuerdos para extraer y guardar información duradera del historial real del chat actual. Úsala ante una petición de recordar o hechos importantes, no en cada turno. Puede no encontrar nada que guardar.',
+			"Llama al agente de recuerdos para extraer y guardar información duradera del historial real del chat actual. Úsala ante una petición de recordar o hechos importantes, no en cada turno. Puede no encontrar nada que guardar.",
 		schema: z
 			.object({
 				focus: z
@@ -86,7 +86,7 @@ export const createMemory = tool(
 					.min(1)
 					.nullable()
 					.describe(
-						'Tema del historial que se quiere recordar; null para evaluar todo el lote. No inventes información.'
+						"Tema del historial que se quiere recordar; null para evaluar todo el lote. No inventes información."
 					)
 			})
 			.strict()
@@ -107,17 +107,17 @@ export const queryMemories = tool(
 				}))
 			}
 		} catch (error) {
-			return memoryError(error, 'query_memories')
+			return memoryError(error, "query_memories")
 		}
 	},
 	{
-		name: 'query_memories',
+		name: "query_memories",
 		description:
-			'Busca recuerdos por significado dentro del chat actual. Devuelve ID, texto y distancia coseno: cuanto menor, más cercano. Comprueba la relevancia del texto; una coincidencia no garantiza que responda a la pregunta.',
+			"Busca recuerdos por significado dentro del chat actual. Devuelve ID, texto y distancia coseno: cuanto menor, más cercano. Comprueba la relevancia del texto; una coincidencia no garantiza que responda a la pregunta.",
 		schema: z
 			.object({
-				query: z.string().min(1).describe('Consulta en lenguaje natural sobre lo que necesitas recordar'),
-				limit: z.number().int().min(1).max(20).default(5).describe('Máximo de recuerdos a recuperar')
+				query: z.string().min(1).describe("Consulta en lenguaje natural sobre lo que necesitas recordar"),
+				limit: z.number().int().min(1).max(20).default(5).describe("Máximo de recuerdos a recuperar")
 			})
 			.strict()
 	}
@@ -137,26 +137,26 @@ export const editMemory = tool(
 
 			if (!memory) {
 				return {
-					error: 'No existe un recuerdo con ese ID en el chat actual.'
+					error: "No existe un recuerdo con ese ID en el chat actual."
 				}
 			}
 
 			return { memory: memoryResult(memory) }
 		} catch (error) {
-			return memoryError(error, 'edit_memory')
+			return memoryError(error, "edit_memory")
 		}
 	},
 	{
-		name: 'edit_memory',
+		name: "edit_memory",
 		description:
-			'Corrige un recuerdo existente del chat actual y regenera su embedding. Usa un ID obtenido de query_memories o create_memory y un texto completo basado en una corrección confirmada en la conversación.',
+			"Corrige un recuerdo existente del chat actual y regenera su embedding. Usa un ID obtenido de query_memories o create_memory y un texto completo basado en una corrección confirmada en la conversación.",
 		schema: z
 			.object({
 				id: z
 					.string()
 					.regex(/^[1-9][0-9]*$/)
-					.describe('ID del recuerdo que se va a editar'),
-				content: z.string().min(1).describe('Nuevo texto completo del recuerdo')
+					.describe("ID del recuerdo que se va a editar"),
+				content: z.string().min(1).describe("Nuevo texto completo del recuerdo")
 			})
 			.strict()
 	}

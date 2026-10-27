@@ -16,17 +16,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import type { AIMessage, HumanMessage } from '@langchain/core/messages'
-import { z } from 'zod'
-import type { ChatFile } from './attachment.js'
-import { toModelMessage } from './message.js'
-import { responseMediaListSchema } from './response.js'
-import type { ResponseMedia } from './response.js'
-import { ChatHistory } from './history.js'
-import { ChatId } from './id.js'
-import { createGroupMessage, GroupMessageContext, GroupMessageOptions } from '../telegram/group-message.js'
-import { downloadImages } from '../media/remote.js'
-import { log } from '../logging.js'
+import type { AIMessage, HumanMessage } from "@langchain/core/messages"
+import { z } from "zod"
+import type { ChatFile } from "./attachment.js"
+import { toModelMessage } from "./message.js"
+import { responseMediaListSchema } from "./response.js"
+import type { ResponseMedia } from "./response.js"
+import { ChatHistory } from "./history.js"
+import { ChatId } from "./id.js"
+import { createGroupMessage, GroupMessageContext, GroupMessageOptions } from "../telegram/group-message.js"
+import { downloadImages } from "../media/remote.js"
+import { log } from "../logging.js"
 
 export type GroupMention = {
 	text: string
@@ -35,7 +35,7 @@ export type GroupMention = {
 
 export type GroupMessage = {
 	id: number
-	role: 'user' | 'assistant'
+	role: "user" | "assistant"
 	senderId: string
 	senderName: string
 	text: string
@@ -48,18 +48,18 @@ export type GroupMessage = {
 
 const groupResponseMessageSchema = z
 	.object({
-		text: z.string().describe('Texto de la respuesta, sin Markdown ni HTML'),
+		text: z.string().describe("Texto de la respuesta, sin Markdown ni HTML"),
 		media: responseMediaListSchema,
 		replyToMessageId: z
 			.number()
 			.int()
 			.nullable()
 			.describe(
-				'Por defecto null. ID de un mensaje del historial solo para distinguir hilos entre muchos mensajes o aclarar una respuesta específica que sería ambigua sin cita'
+				"Por defecto null. ID de un mensaje del historial solo para distinguir hilos entre muchos mensajes o aclarar una respuesta específica que sería ambigua sin cita"
 			),
 		mentionUserIds: z
 			.array(z.string())
-			.describe('IDs de usuarios del historial a los que mencionar; vacío si no es necesario')
+			.describe("IDs de usuarios del historial a los que mencionar; vacío si no es necesario")
 	})
 	.strict()
 
@@ -68,7 +68,7 @@ export const groupResponseSchema = z
 		messages: z
 			.array(groupResponseMessageSchema)
 			.min(1)
-			.describe('Mensajes breves en orden de envío; usa tantos como necesites para responder con naturalidad')
+			.describe("Mensajes breves en orden de envío; usa tantos como necesites para responder con naturalidad")
 	})
 	.strict() satisfies z.ZodType<GroupResponse>
 
@@ -121,7 +121,7 @@ export class GroupChatHistory extends ChatHistory<GroupMessage> {
 		options: GroupMessageOptions = {},
 		mediaUrl?: string
 	): Promise<void> {
-		const message = createGroupMessage(ctx, 'assistant', options)
+		const message = createGroupMessage(ctx, "assistant", options)
 		let images = message.images ?? []
 
 		if (mediaUrl) {
@@ -130,14 +130,14 @@ export class GroupChatHistory extends ChatHistory<GroupMessage> {
 			} catch (error) {
 				log.warn(
 					{ err: error, messageId: message.id },
-					'Failed to download assistant media for group chat history'
+					"Failed to download assistant media for group chat history"
 				)
 			}
 		}
 
 		this.addMessage({
 			...message,
-			role: 'assistant',
+			role: "assistant",
 			...(images.length ? { images } : {})
 		})
 	}

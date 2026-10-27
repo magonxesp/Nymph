@@ -23,7 +23,7 @@ export class MemoryContent {
 
 	private validate(): void {
 		if (this.value.trim().length === 0) {
-			throw new Error('The memory content must not be blank')
+			throw new Error("The memory content must not be blank")
 		}
 	}
 }

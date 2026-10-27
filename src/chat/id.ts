@@ -23,7 +23,7 @@ export class ChatId {
 
 	private validate(): void {
 		if (this.value.trim().length === 0) {
-			throw new Error('The chat ID must not be blank')
+			throw new Error("The chat ID must not be blank")
 		}
 	}
 }

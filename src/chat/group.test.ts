@@ -16,51 +16,51 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { ChatId } from './id.js'
-import { AIMessage, HumanMessage } from '@langchain/core/messages'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { GroupChatHistory, getGroupChatHistory } from './group.js'
-import { downloadImages } from '../media/remote.js'
-import type { GroupMessageContext } from '../telegram/group-message.js'
+import { ChatId } from "./id.js"
+import { AIMessage, HumanMessage } from "@langchain/core/messages"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+import { GroupChatHistory, getGroupChatHistory } from "./group.js"
+import { downloadImages } from "../media/remote.js"
+import type { GroupMessageContext } from "../telegram/group-message.js"
 
-vi.mock('../media/remote.js', () => ({ downloadImages: vi.fn() }))
+vi.mock("../media/remote.js", () => ({ downloadImages: vi.fn() }))
 
 beforeEach(() => {
 	vi.mocked(downloadImages).mockReset()
 })
 
-describe('GroupChatHistory', () => {
+describe("GroupChatHistory", () => {
 	const ctx: GroupMessageContext = {
 		message: {
 			message_id: 5,
 			date: 1,
-			chat: { id: -1, type: 'group', title: 'Test group' },
-			text: 'Mensaje del usuario'
+			chat: { id: -1, type: "group", title: "Test group" },
+			text: "Mensaje del usuario"
 		},
-		me: { id: 99, first_name: 'Nymph' }
+		me: { id: 99, first_name: "Nymph" }
 	}
 	const sentMessage = {
 		message_id: 1,
 		date: 2,
-		chat: { id: -1, type: 'group' as const, title: 'Test group' },
+		chat: { id: -1, type: "group" as const, title: "Test group" },
 		reply_to_message: { ...ctx.message, reply_to_message: undefined }
 	}
 
-	it('stores assistant text without downloading media', async () => {
-		const history = new GroupChatHistory(new ChatId('telegram:group-test'))
+	it("stores assistant text without downloading media", async () => {
+		const history = new GroupChatHistory(new ChatId("telegram:group-test"))
 
 		await history.addAssistantMessage(ctx, {
 			message: sentMessage,
-			text: 'Hola'
+			text: "Hola"
 		})
 
 		expect(history.messages).toEqual([
 			{
 				id: 1,
-				senderId: '99',
-				senderName: 'Nymph',
-				role: 'assistant',
-				text: 'Hola',
+				senderId: "99",
+				senderName: "Nymph",
+				role: "assistant",
+				text: "Hola",
 				timestamp: 2,
 				replyToMessageId: 5,
 				mentions: []
@@ -70,10 +70,10 @@ describe('GroupChatHistory', () => {
 		expect(history.toModelMessages(2)[0]).toBeInstanceOf(AIMessage)
 	})
 
-	it('downloads assistant media and keeps it visible in later model requests', async () => {
-		const history = new GroupChatHistory(new ChatId('telegram:group-test'))
-		const image = 'data:image/jpeg;base64,AQID'
-		const url = 'https://example.com/image.jpg'
+	it("downloads assistant media and keeps it visible in later model requests", async () => {
+		const history = new GroupChatHistory(new ChatId("telegram:group-test"))
+		const image = "data:image/jpeg;base64,AQID"
+		const url = "https://example.com/image.jpg"
 		vi.mocked(downloadImages).mockResolvedValue([image])
 
 		await history.addAssistantMessage(ctx, { message: sentMessage, text: url }, url)
@@ -82,9 +82,9 @@ describe('GroupChatHistory', () => {
 		expect(history.messages).toEqual([
 			{
 				id: 1,
-				senderId: '99',
-				senderName: 'Nymph',
-				role: 'assistant',
+				senderId: "99",
+				senderName: "Nymph",
+				role: "assistant",
 				text: url,
 				timestamp: 2,
 				replyToMessageId: 5,
@@ -94,26 +94,26 @@ describe('GroupChatHistory', () => {
 		])
 		expect(history.toModelMessages(2)[0].content).toEqual([
 			{
-				type: 'text',
-				text: expect.stringContaining('Contenido multimedia enviado por el asistente:')
+				type: "text",
+				text: expect.stringContaining("Contenido multimedia enviado por el asistente:")
 			},
-			{ type: 'image_url', image_url: { url: image } }
+			{ type: "image_url", image_url: { url: image } }
 		])
 	})
 
-	it('keeps the sent message when downloading assistant media fails', async () => {
-		const history = new GroupChatHistory(new ChatId('telegram:group-test'))
-		const url = 'https://example.com/image.jpg'
-		vi.mocked(downloadImages).mockRejectedValue(new Error('Download failed'))
+	it("keeps the sent message when downloading assistant media fails", async () => {
+		const history = new GroupChatHistory(new ChatId("telegram:group-test"))
+		const url = "https://example.com/image.jpg"
+		vi.mocked(downloadImages).mockRejectedValue(new Error("Download failed"))
 
 		await history.addAssistantMessage(ctx, { message: sentMessage, text: url }, url)
 
 		expect(history.messages).toEqual([
 			{
 				id: 1,
-				senderId: '99',
-				senderName: 'Nymph',
-				role: 'assistant',
+				senderId: "99",
+				senderName: "Nymph",
+				role: "assistant",
 				text: url,
 				timestamp: 2,
 				replyToMessageId: 5,
@@ -122,15 +122,15 @@ describe('GroupChatHistory', () => {
 		])
 	})
 
-	it('keeps only the latest 100 messages, including the trigger', () => {
-		const history = new GroupChatHistory(new ChatId('telegram:group-test'))
+	it("keeps only the latest 100 messages, including the trigger", () => {
+		const history = new GroupChatHistory(new ChatId("telegram:group-test"))
 
 		for (let id = 1; id <= 101; id++) {
 			history.addMessage({
 				id,
-				role: 'user',
-				senderId: '1',
-				senderName: 'Ana',
+				role: "user",
+				senderId: "1",
+				senderName: "Ana",
 				text: `Message ${id}`,
 				timestamp: id
 			})
@@ -149,12 +149,12 @@ describe('GroupChatHistory', () => {
 		expect(messages.at(-1)?.content).toContain('"isTrigger": true')
 	})
 
-	it('preserves sender details and special characters as JSON data', () => {
-		const history = new GroupChatHistory(new ChatId('telegram:group-test'))
+	it("preserves sender details and special characters as JSON data", () => {
+		const history = new GroupChatHistory(new ChatId("telegram:group-test"))
 		history.addMessage({
 			id: 5,
-			role: 'user',
-			senderId: 'user&1',
+			role: "user",
+			senderId: "user&1",
 			senderName: 'Ana <A> "B"',
 			text: "Nymph: <hola> & 'adiós'\n¿Qué dices?",
 			timestamp: 12
@@ -167,7 +167,7 @@ describe('GroupChatHistory', () => {
 			JSON.stringify(
 				{
 					messageId: 5,
-					sender: { id: 'user&1', name: 'Ana <A> "B"' },
+					sender: { id: "user&1", name: 'Ana <A> "B"' },
 					timestamp: 12,
 					replyToMessageId: null,
 					mentions: [],
@@ -180,25 +180,25 @@ describe('GroupChatHistory', () => {
 		)
 	})
 
-	it('maps Nymph to assistant messages and preserves reply and mention relationships', () => {
-		const history = new GroupChatHistory(new ChatId('telegram:group-test'))
+	it("maps Nymph to assistant messages and preserves reply and mention relationships", () => {
+		const history = new GroupChatHistory(new ChatId("telegram:group-test"))
 		history.addMessage({
 			id: 6,
-			role: 'assistant',
-			senderId: 'bot',
-			senderName: 'Nymph',
-			text: 'Hola, Ana',
+			role: "assistant",
+			senderId: "bot",
+			senderName: "Nymph",
+			text: "Hola, Ana",
 			timestamp: 13
 		})
 		history.addMessage({
 			id: 7,
-			role: 'user',
-			senderId: '1',
-			senderName: 'Ana',
-			text: 'Gracias, @nymph',
+			role: "user",
+			senderId: "1",
+			senderName: "Ana",
+			text: "Gracias, @nymph",
 			timestamp: 14,
 			replyToMessageId: 6,
-			mentions: [{ text: '@nymph', userId: null }]
+			mentions: [{ text: "@nymph", userId: null }]
 		})
 
 		const messages = history.toModelMessages(7)
@@ -212,64 +212,64 @@ describe('GroupChatHistory', () => {
 		expect(messages[1].content).toContain('"isTrigger": true')
 	})
 
-	it('keeps separate histories for different groups', () => {
-		expect(getGroupChatHistory('group-a')).toBe(getGroupChatHistory('group-a'))
-		expect(getGroupChatHistory('group-a')).not.toBe(getGroupChatHistory('group-b'))
+	it("keeps separate histories for different groups", () => {
+		expect(getGroupChatHistory("group-a")).toBe(getGroupChatHistory("group-a"))
+		expect(getGroupChatHistory("group-a")).not.toBe(getGroupChatHistory("group-b"))
 	})
 })
 
-it('keeps earlier group images available when a later message triggers a response', () => {
-	const history = new GroupChatHistory(new ChatId('telegram:group-test'))
-	const image = 'data:image/jpeg;base64,AQID'
+it("keeps earlier group images available when a later message triggers a response", () => {
+	const history = new GroupChatHistory(new ChatId("telegram:group-test"))
+	const image = "data:image/jpeg;base64,AQID"
 	history.addMessage({
 		id: 1,
-		role: 'user',
-		senderId: '1',
-		senderName: 'Ana',
-		text: 'Mira esto',
+		role: "user",
+		senderId: "1",
+		senderName: "Ana",
+		text: "Mira esto",
 		images: [image],
 		timestamp: 1
 	})
 	history.addMessage({
 		id: 2,
-		role: 'user',
-		senderId: '2',
-		senderName: 'Luis',
-		text: 'Nymph, ¿qué ves en la foto?',
+		role: "user",
+		senderId: "2",
+		senderName: "Luis",
+		text: "Nymph, ¿qué ves en la foto?",
 		timestamp: 2
 	})
 
 	const [message] = history.toModelMessages(2)
 
 	expect(message.content).toEqual([
-		{ type: 'text', text: expect.stringContaining('"isTrigger": false') },
-		{ type: 'image_url', image_url: { url: image } }
+		{ type: "text", text: expect.stringContaining('"isTrigger": false') },
+		{ type: "image_url", image_url: { url: image } }
 	])
 	expect(message.content).toEqual(
-		expect.arrayContaining([{ type: 'text', text: expect.stringContaining('"name": "Ana"') }])
+		expect.arrayContaining([{ type: "text", text: expect.stringContaining('"name": "Ana"') }])
 	)
 })
 
-it('keeps files attached to earlier group messages available to the model', () => {
-	const history = new GroupChatHistory(new ChatId('telegram:group-test'))
+it("keeps files attached to earlier group messages available to the model", () => {
+	const history = new GroupChatHistory(new ChatId("telegram:group-test"))
 	history.addMessage({
 		id: 1,
-		role: 'user',
-		senderId: '1',
-		senderName: 'Ana',
-		text: 'Revisa esto',
+		role: "user",
+		senderId: "1",
+		senderName: "Ana",
+		text: "Revisa esto",
 		timestamp: 1,
-		files: [{ filename: 'data.csv', mimeType: 'text/csv', data: 'AQID' }]
+		files: [{ filename: "data.csv", mimeType: "text/csv", data: "AQID" }]
 	})
 
 	const [message] = history.toModelMessages(2)
 
 	expect(message.content).toEqual([
-		{ type: 'text', text: expect.stringContaining('"isTrigger": false') },
+		{ type: "text", text: expect.stringContaining('"isTrigger": false') },
 		{
-			type: 'input_file',
-			filename: 'data.csv',
-			file_data: 'data:text/csv;base64,AQID'
+			type: "input_file",
+			filename: "data.csv",
+			file_data: "data:text/csv;base64,AQID"
 		}
 	])
 })

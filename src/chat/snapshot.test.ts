@@ -16,52 +16,52 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { describe, expect, it } from 'vitest'
-import { getPrivateChatHistory } from './chat.js'
-import { getGroupChatHistory } from './group.js'
-import { getChatHistorySnapshot } from './snapshot.js'
-import type { ChatReference } from './snapshot.js'
+import { describe, expect, it } from "vitest"
+import { getPrivateChatHistory } from "./chat.js"
+import { getGroupChatHistory } from "./group.js"
+import { getChatHistorySnapshot } from "./snapshot.js"
+import type { ChatReference } from "./snapshot.js"
 
-describe('getChatHistorySnapshot', () => {
-	it('selects the private or group history using the configured chat type', () => {
-		const id = 'telegram:snapshot-routing'
-		getPrivateChatHistory(id).addUserMessage('Private message')
+describe("getChatHistorySnapshot", () => {
+	it("selects the private or group history using the configured chat type", () => {
+		const id = "telegram:snapshot-routing"
+		getPrivateChatHistory(id).addUserMessage("Private message")
 		getGroupChatHistory(id).addMessage({
 			id: 1,
-			role: 'user',
-			senderId: '1',
-			senderName: 'Ana',
-			text: 'Group message',
+			role: "user",
+			senderId: "1",
+			senderName: "Ana",
+			text: "Group message",
 			timestamp: 1
 		})
 
-		const privateSnapshot = getChatHistorySnapshot({ id, type: 'private' })
-		const groupSnapshot = getChatHistorySnapshot({ id, type: 'group' })
+		const privateSnapshot = getChatHistorySnapshot({ id, type: "private" })
+		const groupSnapshot = getChatHistorySnapshot({ id, type: "group" })
 
 		expect(privateSnapshot.chatId.value).toBe(id)
-		expect(privateSnapshot.messages).toEqual([{ role: 'user', content: 'Private message' }])
+		expect(privateSnapshot.messages).toEqual([{ role: "user", content: "Private message" }])
 		expect(groupSnapshot.chatId.value).toBe(id)
 		expect(groupSnapshot.messages).toEqual([
 			{
 				id: 1,
-				role: 'user',
-				senderId: '1',
-				senderName: 'Ana',
-				text: 'Group message',
+				role: "user",
+				senderId: "1",
+				senderName: "Ana",
+				text: "Group message",
 				timestamp: 1
 			}
 		])
 	})
 
-	it('retrieves a fresh independent snapshot on each call', () => {
+	it("retrieves a fresh independent snapshot on each call", () => {
 		const chat: ChatReference = {
-			id: 'telegram:fresh-snapshot',
-			type: 'private'
+			id: "telegram:fresh-snapshot",
+			type: "private"
 		}
 		const history = getPrivateChatHistory(chat.id)
-		history.addUserMessage('First message')
+		history.addUserMessage("First message")
 		const first = getChatHistorySnapshot(chat)
-		history.addUserMessage('Second message')
+		history.addUserMessage("Second message")
 		const second = getChatHistorySnapshot(chat)
 		second.messages.pop()
 

@@ -15,14 +15,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-import type { ChatFile } from './attachment.js'
-import { ChatHistory } from './history.js'
-import { ChatId } from './id.js'
-import { downloadImages } from '../media/remote.js'
-import { log } from '../logging.js'
+import type { ChatFile } from "./attachment.js"
+import { ChatHistory } from "./history.js"
+import { ChatId } from "./id.js"
+import { downloadImages } from "../media/remote.js"
+import { log } from "../logging.js"
 
 export type ChatMessage = {
-	role: 'assistant' | 'user'
+	role: "assistant" | "user"
 	content: string
 	images?: string[]
 	files?: ChatFile[]
@@ -37,7 +37,7 @@ export class PrivateChatHistory extends ChatHistory<ChatMessage> {
 
 	public addUserMessage(content: string, images?: string[], files?: ChatFile[]) {
 		this.addMessage({
-			role: 'user',
+			role: "user",
 			content,
 			...(images?.length ? { images } : {}),
 			...(files?.length ? { files } : {})
@@ -51,12 +51,12 @@ export class PrivateChatHistory extends ChatHistory<ChatMessage> {
 			try {
 				images = await downloadImages(mediaUrl)
 			} catch (error) {
-				log.warn({ err: error }, 'Failed to download assistant media for chat history')
+				log.warn({ err: error }, "Failed to download assistant media for chat history")
 			}
 		}
 
 		this.addMessage({
-			role: 'assistant',
+			role: "assistant",
 			content,
 			...(images.length ? { images } : {})
 		})

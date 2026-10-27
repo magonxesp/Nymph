@@ -16,12 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import pino from 'pino'
+import pino from "pino"
 
 const transport = pino.transport({
-	target: 'pino/file',
+	target: "pino/file",
 	options: {
-		destination: process.env.NYMPH_LOG_FILE ?? 'nymph.log',
+		destination: process.env.NYMPH_LOG_FILE ?? "nymph.log",
 		mkdir: true,
 		append: true
 	}
@@ -29,7 +29,7 @@ const transport = pino.transport({
 
 export const log = pino(
 	{
-		level: process.env.NYMPH_LOG_LEVEL ?? 'debug'
+		level: process.env.NYMPH_LOG_LEVEL ?? "debug"
 	},
 	transport
 )

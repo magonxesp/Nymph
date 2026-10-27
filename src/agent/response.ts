@@ -17,23 +17,23 @@
  */
 
 export function getAnswer(content: unknown): string {
-	if (typeof content === 'string') {
+	if (typeof content === "string") {
 		return content
 	}
 
 	if (!Array.isArray(content)) {
-		return ''
+		return ""
 	}
 
 	const text: string[] = []
 
 	for (const block of content) {
-		if (typeof block === 'object' && block !== null && 'text' in block && typeof block.text === 'string') {
+		if (typeof block === "object" && block !== null && "text" in block && typeof block.text === "string") {
 			text.push(block.text)
 		}
 	}
 
-	return text.join('')
+	return text.join("")
 }
 
 export function getContentTypes(content: unknown): unknown {
@@ -42,7 +42,7 @@ export function getContentTypes(content: unknown): unknown {
 	}
 
 	return content.map((block) => {
-		if (typeof block === 'object' && block !== null && 'type' in block) {
+		if (typeof block === "object" && block !== null && "type" in block) {
 			return block.type
 		}
 

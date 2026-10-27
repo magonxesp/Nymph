@@ -16,22 +16,22 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { getPrivateChatHistory } from './chat.js'
-import type { ChatMessage } from './chat.js'
-import { getGroupChatHistory } from './group.js'
-import type { GroupMessage } from './group.js'
-import type { ChatHistorySnapshot } from './history.js'
+import { getPrivateChatHistory } from "./chat.js"
+import type { ChatMessage } from "./chat.js"
+import { getGroupChatHistory } from "./group.js"
+import type { GroupMessage } from "./group.js"
+import type { ChatHistorySnapshot } from "./history.js"
 
 export type ChatReference = {
 	id: string
-	type: 'private' | 'group'
+	type: "private" | "group"
 }
 
 export function getChatHistorySnapshot(chat: ChatReference): ChatHistorySnapshot<ChatMessage | GroupMessage> {
 	switch (chat.type) {
-		case 'private':
+		case "private":
 			return getPrivateChatHistory(chat.id).snapshot
-		case 'group':
+		case "group":
 			return getGroupChatHistory(chat.id).snapshot
 	}
 }
