@@ -31,6 +31,7 @@ export async function createMemoryAgent() {
 	const systemPrompt = await readFile(path.join(promptsDir, "memory.md"), "utf8")
 
 	return createAgent({
+		name: "memory",
 		model: new ChatOpenAI({
 			apiKey: openAIApiKey,
 			model: memoryModel,

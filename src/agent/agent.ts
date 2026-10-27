@@ -52,6 +52,7 @@ export async function createPrivateChatAgent() {
 	log.debug({ systemPrompt }, "System prompt built")
 
 	return createAgent({
+		name: "private_chat",
 		model: new ChatOpenAI({
 			apiKey: openAIApiKey,
 			model: chatModel,
@@ -79,6 +80,7 @@ export async function createGroupChatAgent() {
 	log.debug({ systemPrompt }, "System prompt built")
 
 	return createAgent({
+		name: "group_chat",
 		model: new ChatOpenAI({
 			apiKey: openAIApiKey,
 			model: chatModel,

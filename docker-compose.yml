@@ -6,9 +6,27 @@ services:
     environment:
       NYMPH_POSTGRES_HOST: postgres
       NYMPH_POSTGRES_PORT: 5432
+      NYMPH_DDGS_BASE_URL: http://ddgs:8000
+      NYMPH_DDGS_BACKEND: ${NYMPH_DDGS_BACKEND:-auto}
     depends_on:
+      ddgs:
+        condition: service_healthy
       postgres:
         condition: service_healthy
+
+  ddgs:
+    build: ./docker/ddgs
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8001:8000"
+    volumes:
+      - ./logs:/logs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import json, urllib.request; assert json.load(urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3))['status'] == 'healthy'"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   postgres:
     build: ./docker/postgres

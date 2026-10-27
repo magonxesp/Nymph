@@ -8,6 +8,7 @@
     "test": "vitest src",
     "start": "tsx src/index.ts",
     "build": "tsc",
+    "browser:install": "playwright install chromium --only-shell",
     "lint": "oxlint && prettier src/ --check",
     "lint:fix": "oxlint --fix",
     "format": "prettier src/ --write"
@@ -26,6 +27,8 @@
   "dependencies": {
     "@langchain/core": "^1.2.17",
     "@langchain/openai": "^1.6.2",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "@playwright/mcp": "^0.0.83",
     "dotenv": "17.4.2",
     "fast-xml-parser": "^5.11.2",
     "fast-xml-validator": "^1.4.2",
@@ -37,6 +40,7 @@
     "pg": "^8.23.1",
     "pgvector": "^0.3.0",
     "pino": "^10.4.0",
+    "playwright": "1.64.0-alpha-1790635538000",
     "yaml": "^2.9.1",
     "zod": "^4.6.7"
   },

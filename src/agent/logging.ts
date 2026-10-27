@@ -68,15 +68,33 @@ function getReasoning(content: unknown): string[] {
 export class PinoLangChainHandler extends BaseCallbackHandler {
 	name = "pino_langchain"
 
+	private readonly agentsByRun = new Map<string, string>()
+
 	constructor(private readonly chatId: number) {
 		super()
 	}
 
-	handleChatModelStart(_model: unknown, _messages: unknown, runId: string): void {
-		log.debug({ chatId: this.chatId, runId }, "LangChain model started")
+	handleChatModelStart(
+		_model: unknown,
+		_messages: unknown,
+		runId: string,
+		_parentRunId?: string,
+		_extraParams?: Record<string, unknown>,
+		_tags?: string[],
+		metadata?: Record<string, unknown>
+	): void {
+		const agent = metadata?.lc_agent_name
+
+		if (typeof agent === "string" && agent.trim()) {
+			this.agentsByRun.set(runId, agent)
+		}
+
+		log.debug({ chatId: this.chatId, runId, ...this.agentFields(runId) }, "LangChain model started")
 	}
 
 	handleLLMEnd(output: LLMResult, runId: string): void {
+		const agentFields = this.agentFields(runId)
+
 		for (const generation of output.generations.flat()) {
 			if (!("message" in generation)) {
 				continue
@@ -90,6 +108,7 @@ export class PinoLangChainHandler extends BaseCallbackHandler {
 					{
 						chatId: this.chatId,
 						runId,
+						...agentFields,
 						model: modelUsage.data.response_metadata?.model_name,
 						usage: modelUsage.data.usage_metadata
 					},
@@ -102,15 +121,22 @@ export class PinoLangChainHandler extends BaseCallbackHandler {
 			}
 
 			for (const reasoning of getReasoning(message.content)) {
-				log.debug({ chatId: this.chatId, runId, reasoning }, "LangChain model reasoning")
+				log.debug({ chatId: this.chatId, runId, ...agentFields, reasoning }, "LangChain model reasoning")
 			}
 		}
 
-		log.debug({ chatId: this.chatId, runId }, "LangChain model finished")
+		log.debug({ chatId: this.chatId, runId, ...agentFields }, "LangChain model finished")
+		this.agentsByRun.delete(runId)
 	}
 
 	handleLLMError(err: Error, runId: string): void {
-		log.error({ error: err, chatId: this.chatId, runId }, "LangChain model failed")
+		log.error({ error: err, chatId: this.chatId, runId, ...this.agentFields(runId) }, "LangChain model failed")
+		this.agentsByRun.delete(runId)
+	}
+
+	private agentFields(runId: string): { agent?: string } {
+		const agent = this.agentsByRun.get(runId)
+		return agent === undefined ? {} : { agent }
 	}
 
 	handleToolStart(

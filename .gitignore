@@ -6,3 +6,5 @@
 AGENTS.md
 .vitest/
 *.log
+/logs/
+__pycache__/

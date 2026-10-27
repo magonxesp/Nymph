@@ -52,6 +52,7 @@ describe("createMemoryAgent", () => {
 		})
 		expect(createAgent).toHaveBeenCalledWith(
 			expect.objectContaining({
+				name: "memory",
 				tools: [],
 				systemPrompt: expect.stringContaining("datos JSON")
 			})

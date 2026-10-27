@@ -15,7 +15,8 @@ FROM node:24.19.0-bookworm-slim
 
 ENV NODE_ENV=production \
     NYMPH_SKILLS_DIR=/app/skills \
-    NYMPH_PROMPTS_DIR=/app/prompts
+    NYMPH_PROMPTS_DIR=/app/prompts \
+    PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg \
@@ -24,6 +25,9 @@ RUN apt-get update \
 WORKDIR /app
 
 COPY --from=build /app/node_modules ./node_modules
+RUN ./node_modules/.bin/playwright install --with-deps --only-shell chromium \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/dist ./dist
 COPY package.json group-triggers.txt ./
 COPY skills/ ./skills/
