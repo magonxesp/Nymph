@@ -17,6 +17,8 @@
  */
 
 import { describe, expect, it } from "vitest"
+import { ChatId } from "./id.js"
+import { ChatPlatform } from "./platform.js"
 import { getPrivateChatHistory } from "./chat.js"
 import { getGroupChatHistory } from "./group.js"
 import { getChatHistorySnapshot } from "./snapshot.js"
@@ -24,9 +26,9 @@ import type { ChatReference } from "./snapshot.js"
 
 describe("getChatHistorySnapshot", () => {
 	it("selects the private or group history using the configured chat type", () => {
-		const id = "telegram:snapshot-routing"
-		getPrivateChatHistory(id).addUserMessage("Private message")
-		getGroupChatHistory(id).addMessage({
+		const id = "snapshot-routing"
+		getPrivateChatHistory(ChatId.forTelegram(id)).addUserMessage("Private message")
+		getGroupChatHistory(ChatId.forTelegram(id)).addMessage({
 			id: 1,
 			role: "user",
 			senderId: "1",
@@ -35,12 +37,14 @@ describe("getChatHistorySnapshot", () => {
 			timestamp: 1
 		})
 
-		const privateSnapshot = getChatHistorySnapshot({ id, type: "private" })
-		const groupSnapshot = getChatHistorySnapshot({ id, type: "group" })
+		const privateSnapshot = getChatHistorySnapshot({ id, platform: ChatPlatform.Telegram, type: "private" })
+		const groupSnapshot = getChatHistorySnapshot({ id, platform: ChatPlatform.Telegram, type: "group" })
 
 		expect(privateSnapshot.chatId.value).toBe(id)
+		expect(privateSnapshot.chatId.platform).toBe(ChatPlatform.Telegram)
 		expect(privateSnapshot.messages).toEqual([{ role: "user", content: "Private message" }])
 		expect(groupSnapshot.chatId.value).toBe(id)
+		expect(groupSnapshot.chatId.platform).toBe(ChatPlatform.Telegram)
 		expect(groupSnapshot.messages).toEqual([
 			{
 				id: 1,
@@ -55,10 +59,11 @@ describe("getChatHistorySnapshot", () => {
 
 	it("retrieves a fresh independent snapshot on each call", () => {
 		const chat: ChatReference = {
-			id: "telegram:fresh-snapshot",
+			id: "fresh-snapshot",
+			platform: ChatPlatform.Telegram,
 			type: "private"
 		}
-		const history = getPrivateChatHistory(chat.id)
+		const history = getPrivateChatHistory(new ChatId(chat.id, chat.platform))
 		history.addUserMessage("First message")
 		const first = getChatHistorySnapshot(chat)
 		history.addUserMessage("Second message")

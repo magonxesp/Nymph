@@ -16,9 +16,22 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { ChatPlatform } from "./platform.js"
+
 export class ChatId {
-	public constructor(public readonly value: string) {
+	public constructor(
+		public readonly value: string,
+		public readonly platform: ChatPlatform
+	) {
 		this.validate()
+	}
+
+	public static forTelegram(value: string | number): ChatId {
+		return new ChatId(String(value), ChatPlatform.Telegram)
+	}
+
+	public toMapKey(): string {
+		return `${this.platform}:${this.value}`
 	}
 
 	private validate(): void {

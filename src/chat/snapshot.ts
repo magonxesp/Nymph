@@ -16,6 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { ChatId } from "./id.js"
+import { ChatPlatform } from "./platform.js"
 import { getPrivateChatHistory } from "./chat.js"
 import type { ChatMessage } from "./chat.js"
 import { getGroupChatHistory } from "./group.js"
@@ -24,14 +26,17 @@ import type { ChatHistorySnapshot } from "./history.js"
 
 export type ChatReference = {
 	id: string
+	platform: ChatPlatform
 	type: "private" | "group"
 }
 
 export function getChatHistorySnapshot(chat: ChatReference): ChatHistorySnapshot<ChatMessage | GroupMessage> {
+	const chatId = new ChatId(chat.id, chat.platform)
+
 	switch (chat.type) {
 		case "private":
-			return getPrivateChatHistory(chat.id).snapshot
+			return getPrivateChatHistory(chatId).snapshot
 		case "group":
-			return getGroupChatHistory(chat.id).snapshot
+			return getGroupChatHistory(chatId).snapshot
 	}
 }

@@ -29,15 +29,16 @@ import { getPrivateChatHistory } from "../chat/chat.js"
 
 vi.mock("../logging.js", () => ({ log: { warn: vi.fn() } }))
 
-const chatId = new ChatId("telegram:123")
-const history = getPrivateChatHistory(chatId.value)
+const chatId = ChatId.forTelegram("123")
+const history = getPrivateChatHistory(chatId)
 history.addUserMessage("El proyecto se llama Nymph.")
 const snapshot = history.snapshot
-const config = { configurable: { chat: { id: chatId.value, type: "private" } } }
+const config = { configurable: { chat: { id: chatId.value, platform: chatId.platform, type: "private" } } }
 
 const memory = new Memory({
 	id: "42",
 	chatId: chatId.value,
+	platform: chatId.platform,
 	content: "El proyecto se llama Nymph.",
 	embedding: [1, 0, 0],
 	createdAt: new Date("2026-10-26T10:00:00Z"),
@@ -102,9 +103,9 @@ describe("Memory tools", () => {
 
 	it("keeps static tools isolated by each configured chat", async () => {
 		const search = vi.spyOn(MemoryRepository.prototype, "search").mockResolvedValue([])
-		const otherChatId = new ChatId("telegram:456")
+		const otherChatId = ChatId.forTelegram("456")
 		const otherConfig = {
-			configurable: { chat: { id: otherChatId.value, type: "group" } }
+			configurable: { chat: { id: otherChatId.value, platform: otherChatId.platform, type: "group" } }
 		}
 
 		await Promise.all([
@@ -120,6 +121,7 @@ describe("Memory tools", () => {
 		const updated = new Memory({
 			id: "42",
 			chatId: chatId.value,
+			platform: chatId.platform,
 			content: "El proyecto se llama Miku.",
 			embedding: [1, 0, 0],
 			createdAt: memory.createdAt,
@@ -150,10 +152,10 @@ describe("Memory tools", () => {
 	})
 
 	it("loads the current history only when the tool is invoked", async () => {
-		const source = getPrivateChatHistory("telegram:tool-live-history")
+		const source = getPrivateChatHistory(ChatId.forTelegram("tool-live-history"))
 		source.addUserMessage("Original text")
 		const liveConfig = {
-			configurable: { chat: { id: source.chatId.value, type: "private" } }
+			configurable: { chat: { id: source.chatId.value, platform: source.chatId.platform, type: "private" } }
 		}
 		vi.mocked(generateMemories).mockResolvedValue([])
 		source.addUserMessage("Later message")

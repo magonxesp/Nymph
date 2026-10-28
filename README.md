@@ -20,14 +20,14 @@ npm ci
 Crea las tablas ejecutando el SQL con los datos de tu conexión (el siguiente ejemplo usa los valores predeterminados de `.env.example` y solicita la contraseña):
 
 ```sh
-psql -h localhost -p 5432 -U nymph -d nymph -v ON_ERROR_STOP=1 -f sql/memories.sql
+psql -h localhost -p 5432 -U nymph -d nymph -v ON_ERROR_STOP=1 -f sql/squema.sql
 npm run build
 npm start
 ```
 
 ### Con Docker
 
-Necesitas una base de datos PostgreSQL 17 con pgvector instalado, accesible desde el contenedor. Crea la base de datos, el usuario y las tablas ejecutando `sql/memories.sql` con `psql`, como en la sección anterior. Configura las variables `NYMPH_POSTGRES_*` en `.env`; `NYMPH_POSTGRES_HOST` debe apuntar al servidor de PostgreSQL desde el contenedor. Si PostgreSQL se ejecuta en el equipo local y usas Docker Desktop, puedes utilizar `host.docker.internal`.
+Necesitas una base de datos PostgreSQL 17 con pgvector instalado, accesible desde el contenedor. Crea la base de datos, el usuario y las tablas ejecutando `sql/squema.sql` con `psql`, como en la sección anterior. Configura las variables `NYMPH_POSTGRES_*` en `.env`; `NYMPH_POSTGRES_HOST` debe apuntar al servidor de PostgreSQL desde el contenedor. Si PostgreSQL se ejecuta en el equipo local y usas Docker Desktop, puedes utilizar `host.docker.internal`.
 
 La imagen Docker incluye Node.js y `ffmpeg`.
 
@@ -50,7 +50,7 @@ Compose incluye PostgreSQL 17 Alpine con pgvector 0.8.7. Los datos se conservan 
 Crea las tablas una sola vez por base de datos nueva. El SQL habilita la extensión pgvector y crea las tablas e índices; no se ejecuta automáticamente:
 
 ```sh
-docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1' < sql/memories.sql
+docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1' < sql/squema.sql
 ```
 
 Después, compila y arranca el bot:

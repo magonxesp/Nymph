@@ -78,7 +78,7 @@ export const createMemory = tool(
 	{
 		name: "create_memory",
 		description:
-			"Llama al agente de recuerdos para extraer y guardar información duradera del historial real del chat actual. Úsala ante una petición de recordar o hechos importantes, no en cada turno. Puede no encontrar nada que guardar.",
+			"Llama al agente de recuerdos para extraer y guardar información duradera del historial real del chat actual. Úsala ante una petición de recordar o hechos importantes, no en cada turno. Puede no encontrar nada que guardar. No está disponible durante la ejecución de una tarea en segundo plano, que no tiene el historial.",
 		schema: z
 			.object({
 				focus: z
@@ -98,7 +98,7 @@ export const queryMemories = tool(
 		try {
 			const chat = getConfiguredChat(runtime)
 			const [embedding] = await embedMemoryTexts([query])
-			const results = await repository.search(new ChatId(chat.id), embedding, limit)
+			const results = await repository.search(new ChatId(chat.id, chat.platform), embedding, limit)
 
 			return {
 				memories: results.map(({ memory, distance }) => ({
@@ -130,7 +130,7 @@ export const editMemory = tool(
 			const memoryId = new MemoryId(id)
 			const memoryContent = new MemoryContent(content)
 			const [embedding] = await embedMemoryTexts([memoryContent.value])
-			const memory = await repository.update(new ChatId(chat.id), memoryId, {
+			const memory = await repository.update(new ChatId(chat.id, chat.platform), memoryId, {
 				content: memoryContent,
 				embedding
 			})

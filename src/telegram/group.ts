@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { ChatId } from "../chat/id.js"
 import type { Context, Filter } from "grammy"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
@@ -56,7 +57,7 @@ function isGroupTriggered(ctx: Filter<Context, "message">): boolean {
 
 export async function handleGroupMessage(ctx: Filter<Context, "message">): Promise<void> {
 	const chatId = ctx.chat.id
-	const history = getGroupChatHistory(`telegram:${chatId}`)
+	const history = getGroupChatHistory(ChatId.forTelegram(chatId))
 
 	try {
 		const attachments = await getTelegramAttachments(ctx.message, ctx.api)
@@ -78,8 +79,13 @@ export async function handleGroupMessage(ctx: Filter<Context, "message">): Promi
 			{
 				callbacks: [new PinoLangChainHandler(chatId)],
 				configurable: {
+					requesterId:
+						ctx.message.sender_chat || ctx.message.from?.id === undefined
+							? undefined
+							: String(ctx.message.from.id),
 					chat: {
 						id: history.chatId.value,
+						platform: history.chatId.platform,
 						type: "group"
 					}
 				}

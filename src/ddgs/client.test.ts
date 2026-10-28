@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DdgsClient } from "./client.js"
 import { log } from "../logging.js"
 
-vi.mock("../logging.js", () => ({ log: { warn: vi.fn() } }))
+vi.mock("../logging.js", () => ({ log: { warn: vi.fn(), debug: vi.fn() } }))
 vi.mock("../env.js", () => ({ ddgsBaseUrl: "http://127.0.0.1:8001", ddgsBackend: "auto" }))
 const request = vi.fn<typeof fetch>()
 

@@ -23,7 +23,7 @@ import { createMemoryHistory } from "./history.js"
 describe("Memory history snapshot", () => {
 	it("includes private chat text without binary attachments", () => {
 		const context = createMemoryHistory({
-			chatId: new ChatId("telegram:test"),
+			chatId: ChatId.forTelegram("test"),
 			messages: [
 				{
 					role: "user",
@@ -48,7 +48,7 @@ describe("Memory history snapshot", () => {
 	it("preserves attribution and reply metadata for shared group memory", () => {
 		const mentions = [{ text: "Ana", userId: "1" }]
 		const context = createMemoryHistory({
-			chatId: new ChatId("telegram:test"),
+			chatId: ChatId.forTelegram("test"),
 			messages: [
 				{
 					id: 5,

@@ -21,6 +21,7 @@ import { createMemoryAgent } from "../agent/memory.js"
 import type { MemoryHistoryMessage } from "./history.js"
 import { memoryResponseSchema } from "./response.js"
 import { ChatId } from "../chat/id.js"
+import type { ChatPlatform } from "../chat/platform.js"
 import { MemoryContent } from "./content.js"
 import { Embedding, embedMemoryTexts } from "./embedding.js"
 import { MemoryId } from "./id.js"
@@ -28,6 +29,7 @@ import { MemoryId } from "./id.js"
 export type MemoryObject = {
 	id: string
 	chatId: string
+	platform: ChatPlatform
 	content: string
 	embedding: number[] | null
 	createdAt: Date
@@ -44,7 +46,7 @@ export class Memory {
 
 	public constructor(data: MemoryObject) {
 		this.id = new MemoryId(data.id)
-		this.chatId = new ChatId(data.chatId)
+		this.chatId = new ChatId(data.chatId, data.platform)
 		this.content = new MemoryContent(data.content)
 		this.embedding = data.embedding === null ? null : new Embedding(data.embedding)
 		this.createdAt = new Date(data.createdAt)

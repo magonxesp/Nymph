@@ -5,9 +5,9 @@ description: Busca información actual mediante la API REST de DDGS y consulta l
 
 # Navegación por internet
 
-## Desde el chat
+## Desde una tarea
 
-Llama a `browser_research` una sola vez por petición con una tarea concreta y autosuficiente. Conserva la intención original: no añadas años ni requisitos supuestos. Si aportas la fecha actual, sepárala como contexto. No envíes el historial completo ni secretos. El agente carga esta skill automáticamente.
+En el chat, carga primero la skill `task` y encola las búsquedas de internet. Al ejecutar la tarea, llama a `browser_research` una sola vez por petición con una tarea concreta y autosuficiente. Conserva la intención original: no añadas años ni requisitos supuestos. Si aportas la fecha actual, sepárala como contexto. No envíes el historial completo ni secretos. El agente de navegación carga esta skill automáticamente.
 Devuelve una respuesta breve con los enlaces de `sources`. Si devuelve `not_found` o `unavailable`, explica el resultado y para; no vuelvas a delegar para reiniciar los límites ni inventes una respuesta basada en internet.
 
 ## Dentro del agente de navegación

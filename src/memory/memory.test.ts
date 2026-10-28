@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { ChatPlatform } from "../chat/platform.js"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { Memory, generateMemories } from "./memory.js"
 import type { MemoryHistoryMessage } from "./history.js"
@@ -26,7 +27,8 @@ import type { MemoryObject } from "./memory.js"
 
 const data: MemoryObject = {
 	id: "9007199254740993",
-	chatId: "telegram:123",
+	chatId: "123",
+	platform: ChatPlatform.Telegram,
 	content: "Nymph usa TypeScript",
 	embedding: [1, 0, 0],
 	createdAt: new Date("2026-10-21T10:00:00Z"),
@@ -39,6 +41,7 @@ describe("Memory", () => {
 
 		expect(memory.id.value).toBe(data.id)
 		expect(memory.chatId.value).toBe(data.chatId)
+		expect(memory.chatId.platform).toBe(data.platform)
 		expect(memory.content.value).toBe(data.content)
 		expect(memory.embedding?.value).toEqual(data.embedding)
 		expect(memory.createdAt).toEqual(data.createdAt)

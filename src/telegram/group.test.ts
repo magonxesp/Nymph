@@ -16,6 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { ChatId } from "../chat/id.js"
+import { ChatPlatform } from "../chat/platform.js"
 import { Api, Context } from "grammy"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { handleGroupMessage } from "./group.js"
@@ -187,7 +189,8 @@ describe("handleGroupMessage images", () => {
 		await handleGroupMessage(ctx)
 
 		expect(invokeMock.mock.calls[0][1].configurable).toEqual({
-			chat: { id: `telegram:${chat.id}`, type: "group" }
+			requesterId: "1",
+			chat: { id: String(chat.id), platform: ChatPlatform.Telegram, type: "group" }
 		})
 		expect(reply).toHaveBeenCalledWith("Ana Un pequeño comentario", {
 			entities: [
@@ -209,8 +212,8 @@ describe("handleGroupMessage images", () => {
 				allow_sending_without_reply: true
 			}
 		})
-		expect(getGroupChatHistory(`telegram:${chat.id}`).messages.at(-1)?.text).toBe(media[0].url)
-		expect(getGroupChatHistory(`telegram:${chat.id}`).messages.at(-1)?.images).toEqual([
+		expect(getGroupChatHistory(ChatId.forTelegram(chat.id)).messages.at(-1)?.text).toBe(media[0].url)
+		expect(getGroupChatHistory(ChatId.forTelegram(chat.id)).messages.at(-1)?.images).toEqual([
 			"data:image/jpeg;base64,AQID"
 		])
 
@@ -265,7 +268,7 @@ it.each([
 
 	await handleGroupMessage(ctx)
 
-	expect(getGroupChatHistory(`telegram:${chat.id}`).messages).toEqual([])
+	expect(getGroupChatHistory(ChatId.forTelegram(chat.id)).messages).toEqual([])
 	expect(getFile).not.toHaveBeenCalled()
 	expect(invokeMock).not.toHaveBeenCalled()
 	expect(reply).not.toHaveBeenCalled()

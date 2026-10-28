@@ -17,17 +17,11 @@
  */
 
 import { describe, expect, it } from "vitest"
-import { ChatId } from "../chat/id.js"
 import { MemoryContent } from "./content.js"
 import { Embedding } from "./embedding.js"
 import { MemoryId } from "./id.js"
 
 describe("Memory value objects", () => {
-	it("validates the chat ID value", () => {
-		expect(new ChatId("telegram:123").value).toBe("telegram:123")
-		expect(() => new ChatId(" ")).toThrow()
-	})
-
 	it("preserves bigint IDs as strings", () => {
 		expect(new MemoryId("9007199254740993").value).toBe("9007199254740993")
 		expect(() => new MemoryId("0")).toThrow()

@@ -47,7 +47,7 @@ describe("GroupChatHistory", () => {
 	}
 
 	it("stores assistant text without downloading media", async () => {
-		const history = new GroupChatHistory(new ChatId("telegram:group-test"))
+		const history = new GroupChatHistory(ChatId.forTelegram("group-test"))
 
 		await history.addAssistantMessage(ctx, {
 			message: sentMessage,
@@ -71,7 +71,7 @@ describe("GroupChatHistory", () => {
 	})
 
 	it("downloads assistant media and keeps it visible in later model requests", async () => {
-		const history = new GroupChatHistory(new ChatId("telegram:group-test"))
+		const history = new GroupChatHistory(ChatId.forTelegram("group-test"))
 		const image = "data:image/jpeg;base64,AQID"
 		const url = "https://example.com/image.jpg"
 		vi.mocked(downloadImages).mockResolvedValue([image])
@@ -102,7 +102,7 @@ describe("GroupChatHistory", () => {
 	})
 
 	it("keeps the sent message when downloading assistant media fails", async () => {
-		const history = new GroupChatHistory(new ChatId("telegram:group-test"))
+		const history = new GroupChatHistory(ChatId.forTelegram("group-test"))
 		const url = "https://example.com/image.jpg"
 		vi.mocked(downloadImages).mockRejectedValue(new Error("Download failed"))
 
@@ -123,7 +123,7 @@ describe("GroupChatHistory", () => {
 	})
 
 	it("keeps only the latest 100 messages, including the trigger", () => {
-		const history = new GroupChatHistory(new ChatId("telegram:group-test"))
+		const history = new GroupChatHistory(ChatId.forTelegram("group-test"))
 
 		for (let id = 1; id <= 101; id++) {
 			history.addMessage({
@@ -150,7 +150,7 @@ describe("GroupChatHistory", () => {
 	})
 
 	it("preserves sender details and special characters as JSON data", () => {
-		const history = new GroupChatHistory(new ChatId("telegram:group-test"))
+		const history = new GroupChatHistory(ChatId.forTelegram("group-test"))
 		history.addMessage({
 			id: 5,
 			role: "user",
@@ -181,7 +181,7 @@ describe("GroupChatHistory", () => {
 	})
 
 	it("maps Nymph to assistant messages and preserves reply and mention relationships", () => {
-		const history = new GroupChatHistory(new ChatId("telegram:group-test"))
+		const history = new GroupChatHistory(ChatId.forTelegram("group-test"))
 		history.addMessage({
 			id: 6,
 			role: "assistant",
@@ -213,13 +213,17 @@ describe("GroupChatHistory", () => {
 	})
 
 	it("keeps separate histories for different groups", () => {
-		expect(getGroupChatHistory("group-a")).toBe(getGroupChatHistory("group-a"))
-		expect(getGroupChatHistory("group-a")).not.toBe(getGroupChatHistory("group-b"))
+		expect(getGroupChatHistory(ChatId.forTelegram("group-a"))).toBe(
+			getGroupChatHistory(ChatId.forTelegram("group-a"))
+		)
+		expect(getGroupChatHistory(ChatId.forTelegram("group-a"))).not.toBe(
+			getGroupChatHistory(ChatId.forTelegram("group-b"))
+		)
 	})
 })
 
 it("keeps earlier group images available when a later message triggers a response", () => {
-	const history = new GroupChatHistory(new ChatId("telegram:group-test"))
+	const history = new GroupChatHistory(ChatId.forTelegram("group-test"))
 	const image = "data:image/jpeg;base64,AQID"
 	history.addMessage({
 		id: 1,
@@ -251,7 +255,7 @@ it("keeps earlier group images available when a later message triggers a respons
 })
 
 it("keeps files attached to earlier group messages available to the model", () => {
-	const history = new GroupChatHistory(new ChatId("telegram:group-test"))
+	const history = new GroupChatHistory(ChatId.forTelegram("group-test"))
 	history.addMessage({
 		id: 1,
 		role: "user",

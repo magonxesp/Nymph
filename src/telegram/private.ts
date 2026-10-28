@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { ChatId } from "../chat/id.js"
 import type { Context, Filter } from "grammy"
 import { createPrivateChatAgent } from "../agent/agent.js"
 import { log } from "../logging.js"
@@ -32,7 +33,7 @@ export async function handlePrivateMessage(ctx: Filter<Context, "message">): Pro
 	const chatId = ctx.chat.id
 
 	const text = ctx.message.text ?? ctx.message.caption
-	const history = getPrivateChatHistory(`telegram:${chatId}`)
+	const history = getPrivateChatHistory(ChatId.forTelegram(chatId))
 
 	try {
 		const attachments = await getTelegramAttachments(ctx.message, ctx.api)
@@ -55,8 +56,10 @@ export async function handlePrivateMessage(ctx: Filter<Context, "message">): Pro
 			{
 				callbacks: [new PinoLangChainHandler(chatId)],
 				configurable: {
+					requesterId: ctx.message.from?.id === undefined ? undefined : String(ctx.message.from.id),
 					chat: {
 						id: history.chatId.value,
+						platform: history.chatId.platform,
 						type: "private"
 					}
 				}

@@ -19,6 +19,7 @@
 import type { Knex } from "knex"
 import pgvector from "pgvector"
 import { z } from "zod"
+import { ChatPlatform } from "../chat/platform.js"
 import { database } from "../database.js"
 import type { ChatId } from "../chat/id.js"
 import type { MemoryContent } from "./content.js"
@@ -39,6 +40,7 @@ export type MemorySearchResult = {
 type MemoryRow = {
 	id: string
 	chat_id: string
+	platform: ChatPlatform
 	content: string
 	embedding: number[] | null
 	created_at: Date
@@ -48,6 +50,7 @@ type MemoryRow = {
 const memoryRowSchema = z.object({
 	id: z.string(),
 	chat_id: z.string(),
+	platform: z.enum(ChatPlatform),
 	content: z.string(),
 	embedding: z
 		.string()
@@ -68,6 +71,7 @@ function toMemory(memory: MemoryRow): Memory {
 	return new Memory({
 		id: memory.id,
 		chatId: memory.chat_id,
+		platform: memory.platform,
 		content: memory.content,
 		embedding: memory.embedding,
 		createdAt: memory.created_at,
@@ -88,6 +92,7 @@ export class MemoryRepository {
 			.insert(
 				inputs.map((input) => ({
 					chat_id: chatId.value,
+					platform: chatId.platform,
 					content: input.content.value,
 					embedding: pgvector.toSql([...input.embedding.value]),
 					created_at: now,
@@ -104,6 +109,7 @@ export class MemoryRepository {
 		const rows: unknown[] = await this.connection("chat_memories")
 			.insert({
 				chat_id: chatId.value,
+				platform: chatId.platform,
 				content: input.content.value,
 				embedding: pgvector.toSql([...input.embedding.value]),
 				created_at: now,
@@ -119,7 +125,7 @@ export class MemoryRepository {
 		const distance = this.connection.raw("?? <=> ?::vector", ["embedding", pgvector.toSql([...embedding.value])])
 		const rows: unknown[] = await this.connection("chat_memories")
 			.select("*", this.connection.raw("? AS distance", [distance]))
-			.where("chat_id", chatId.value)
+			.where({ chat_id: chatId.value, platform: chatId.platform })
 			.whereNotNull("embedding")
 			.orderBy(distance, "asc")
 			.limit(validatedLimit)
@@ -136,7 +142,7 @@ export class MemoryRepository {
 
 	public async update(chatId: ChatId, id: MemoryId, input: MemoryInput): Promise<Memory | undefined> {
 		const rows: unknown[] = await this.connection("chat_memories")
-			.where({ chat_id: chatId.value, id: id.value })
+			.where({ chat_id: chatId.value, platform: chatId.platform, id: id.value })
 			.update({
 				content: input.content.value,
 				embedding: pgvector.toSql([...input.embedding.value]),
@@ -153,7 +159,7 @@ export class MemoryRepository {
 
 	public async delete(chatId: ChatId, id: MemoryId): Promise<boolean> {
 		const deletedCount = await this.connection("chat_memories")
-			.where({ chat_id: chatId.value, id: id.value })
+			.where({ chat_id: chatId.value, platform: chatId.platform, id: id.value })
 			.delete()
 
 		return deletedCount > 0

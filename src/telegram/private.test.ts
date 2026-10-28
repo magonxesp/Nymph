@@ -16,6 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { ChatId } from "../chat/id.js"
+import { ChatPlatform } from "../chat/platform.js"
 import { Api, Context } from "grammy"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { maxAttachmentBytes } from "./attachment.js"
@@ -110,14 +112,15 @@ describe("handlePrivateMessage images", () => {
 		await handlePrivateMessage(ctx)
 
 		expect(invokeMock.mock.calls[0][1].configurable).toEqual({
-			chat: { id: `telegram:${chat.id}`, type: "private" }
+			requesterId: "1",
+			chat: { id: String(chat.id), platform: ChatPlatform.Telegram, type: "private" }
 		})
 		expect(reply).toHaveBeenCalledWith("Un pequeño comentario")
 		expect(photo).toHaveBeenCalledWith(media[0].url, {
 			reply_parameters: undefined
 		})
-		expect(getPrivateChatHistory(`telegram:${chat.id}`).messages.at(-1)?.content).toBe(media[0].url)
-		expect(getPrivateChatHistory(`telegram:${chat.id}`).messages.at(-1)?.images).toEqual([
+		expect(getPrivateChatHistory(ChatId.forTelegram(chat.id)).messages.at(-1)?.content).toBe(media[0].url)
+		expect(getPrivateChatHistory(ChatId.forTelegram(chat.id)).messages.at(-1)?.images).toEqual([
 			"data:image/jpeg;base64,AQID"
 		])
 
@@ -189,7 +192,9 @@ describe("handlePrivateMessage images", () => {
 			}
 		])
 		expect(reply).toHaveBeenCalledWith("Veo una imagen")
-		expect(getPrivateChatHistory("telegram:8001").messages[0].images).toEqual(["data:image/jpeg;base64,AQID"])
+		expect(getPrivateChatHistory(ChatId.forTelegram("8001")).messages[0].images).toEqual([
+			"data:image/jpeg;base64,AQID"
+		])
 	})
 })
 
@@ -228,7 +233,7 @@ it.each([
 
 	await handlePrivateMessage(ctx)
 
-	expect(getPrivateChatHistory(`telegram:${chat.id}`).messages).toEqual([])
+	expect(getPrivateChatHistory(ChatId.forTelegram(chat.id)).messages).toEqual([])
 	expect(getFile).not.toHaveBeenCalled()
 	expect(invokeMock).not.toHaveBeenCalled()
 	expect(reply).not.toHaveBeenCalled()
@@ -286,7 +291,7 @@ it("passes a document without a caption to the private chat model", async () => 
 			file_data: "data:application/pdf;base64,AQID"
 		}
 	])
-	expect(getPrivateChatHistory("telegram:8003").messages[0].files).toEqual([
+	expect(getPrivateChatHistory(ChatId.forTelegram("8003")).messages[0].files).toEqual([
 		{ filename: "report.pdf", mimeType: "application/pdf", data: "AQID" }
 	])
 })

@@ -17,7 +17,7 @@
  */
 import type { ChatFile } from "./attachment.js"
 import { ChatHistory } from "./history.js"
-import { ChatId } from "./id.js"
+import type { ChatId } from "./id.js"
 import { downloadImages } from "../media/remote.js"
 import { log } from "../logging.js"
 
@@ -65,15 +65,15 @@ export class PrivateChatHistory extends ChatHistory<ChatMessage> {
 
 const privateChatHistories = new Map<string, PrivateChatHistory>()
 
-export function getPrivateChatHistory(chatId: string): PrivateChatHistory {
-	const existingHistory = privateChatHistories.get(chatId)
+export function getPrivateChatHistory(chatId: ChatId): PrivateChatHistory {
+	const existingHistory = privateChatHistories.get(chatId.toMapKey())
 
 	if (existingHistory) {
 		return existingHistory
 	}
 
-	const history = new PrivateChatHistory(new ChatId(chatId))
-	privateChatHistories.set(chatId, history)
+	const history = new PrivateChatHistory(chatId)
+	privateChatHistories.set(chatId.toMapKey(), history)
 
 	return history
 }

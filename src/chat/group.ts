@@ -23,7 +23,7 @@ import { toModelMessage } from "./message.js"
 import { responseMediaListSchema } from "./response.js"
 import type { ResponseMedia } from "./response.js"
 import { ChatHistory } from "./history.js"
-import { ChatId } from "./id.js"
+import type { ChatId } from "./id.js"
 import { createGroupMessage, GroupMessageContext, GroupMessageOptions } from "../telegram/group-message.js"
 import { downloadImages } from "../media/remote.js"
 import { log } from "../logging.js"
@@ -145,15 +145,15 @@ export class GroupChatHistory extends ChatHistory<GroupMessage> {
 
 const groupChatHistories = new Map<string, GroupChatHistory>()
 
-export function getGroupChatHistory(chatId: string): GroupChatHistory {
-	const existingHistory = groupChatHistories.get(chatId)
+export function getGroupChatHistory(chatId: ChatId): GroupChatHistory {
+	const existingHistory = groupChatHistories.get(chatId.toMapKey())
 
 	if (existingHistory) {
 		return existingHistory
 	}
 
-	const history = new GroupChatHistory(new ChatId(chatId))
-	groupChatHistories.set(chatId, history)
+	const history = new GroupChatHistory(chatId)
+	groupChatHistories.set(chatId.toMapKey(), history)
 
 	return history
 }

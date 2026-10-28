@@ -25,7 +25,7 @@ import { ChatId } from "./id.js"
 
 describe("Chat history snapshots", () => {
 	it("includes the history chat ID in independent snapshot batches", () => {
-		const chatId = new ChatId("telegram:123")
+		const chatId = ChatId.forTelegram("123")
 		const history = new PrivateChatHistory(chatId)
 		const snapshots: ChatHistorySnapshot<ChatMessage>[] = []
 		history.on("snapshot", (snapshot) => snapshots.push(snapshot))
@@ -47,7 +47,7 @@ describe("Chat history snapshots", () => {
 	})
 
 	it("preserves the chat ID and copies nested group metadata", () => {
-		const chatId = new ChatId("telegram:-123")
+		const chatId = ChatId.forTelegram("-123")
 		const history = new GroupChatHistory(chatId)
 		history.addMessage({
 			id: 1,
