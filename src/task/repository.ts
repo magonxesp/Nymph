@@ -24,7 +24,7 @@ const rowSchema = z.object({
 	requester_id: z.string(),
 	status: z.string(),
 	prompt: z.string(),
-	agent: z.string(),
+	agent: z.string().nullable(),
 	result: z.json(),
 	error: z.string().nullable(),
 	embeddings: z

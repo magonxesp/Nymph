@@ -13,7 +13,7 @@ export type TaskData = {
 	requesterId: string
 	status: string
 	prompt: string
-	agent: string
+	agent: string | null
 	result: TaskResult
 	error: string | null
 	embeddings: number[] | null
@@ -43,7 +43,7 @@ export class Task {
 	public readonly requesterId: string
 	public readonly status: string
 	public readonly prompt: string
-	public readonly agent: string
+	public readonly agent: string | null
 	public readonly result: TaskResult
 	public readonly error: string | null
 	public readonly embeddings: Embedding | null
@@ -54,10 +54,13 @@ export class Task {
 		if (data.id !== null && !/^[1-9][0-9]*$/.test(data.id)) {
 			throw new Error("The task database ID must be a positive integer")
 		}
-		for (const value of [data.requesterId, data.status, data.prompt, data.agent]) {
+		for (const value of [data.requesterId, data.status, data.prompt]) {
 			if (value.trim().length === 0) {
 				throw new Error("Task fields must not be blank")
 			}
+		}
+		if (data.agent !== null && data.agent.trim().length === 0) {
+			throw new Error("The task agent must not be blank")
 		}
 		this.id = data.id
 		this.taskId = new TaskId(data.taskId)
