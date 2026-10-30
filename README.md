@@ -4,6 +4,14 @@ La misma pero ahora con inteligencia :D
 
 ![](./docs/nymph.webp)
 
+## Qué puede hacer
+
+- Conversar por Telegram en privado y en grupos con la personalidad de Nymph de *Sora no Otoshimono*.
+- Interpretar imágenes, stickers y animaciones que compartas en el chat.
+- Guardar, consultar y actualizar recuerdos para mantener el contexto entre conversaciones.
+- Buscar información en internet y compartir las fuentes consultadas.
+- Buscar imágenes por etiquetas en boorus o elegir una al azar.
+
 ## Compilar y ejecutar
 
 Copia `.env.example` a `.env` y configura `NYMPH_OPENAI_API_KEY`, `NYMPH_TELEGRAM_TOKEN` y las variables `NYMPH_POSTGRES_*` para conectar con tu base de datos.
