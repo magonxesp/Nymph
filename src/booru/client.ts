@@ -17,7 +17,7 @@
  */
 
 import { GelBooruClient, SafeBooruClient, Rule34Client } from "./gelbooru.js"
-import { DanBooruClient, SonoharaClient } from "./danbooru.js"
+import { DanBooruClient } from "./danbooru.js"
 import { KonachanClient, KonachanNetClient, YandereClient } from "./moebooru.js"
 import type { GetPostsOptions, Post, Posts } from "./post.js"
 import type { Tag } from "./tag.js"
@@ -28,15 +28,13 @@ export interface BooruClient {
 	autocompleteTags(query: string): Promise<Tag[]>
 }
 
-export type BooruName =
-	"gelbooru" | "safebooru" | "rule34" | "danbooru" | "sonohara" | "konachan" | "konachan.net" | "yandere"
+export type BooruName = "gelbooru" | "safebooru" | "rule34" | "danbooru" | "konachan" | "konachan.net" | "yandere"
 
 export const booruNames = [
 	"gelbooru",
 	"safebooru",
 	"rule34",
 	"danbooru",
-	"sonohara",
 	"konachan",
 	"konachan.net",
 	"yandere"
@@ -52,8 +50,6 @@ export function getBooruClient(booru: BooruName): BooruClient {
 			return new Rule34Client()
 		case "danbooru":
 			return new DanBooruClient()
-		case "sonohara":
-			return new SonoharaClient()
 		case "konachan":
 			return new KonachanClient()
 		case "konachan.net":

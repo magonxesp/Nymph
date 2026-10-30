@@ -167,9 +167,3 @@ export class DanBooruClient implements BooruClient {
 			}))
 	}
 }
-
-export class SonoharaClient extends DanBooruClient {
-	public constructor(options: DanBooruClientOptions = {}) {
-		super({ baseUrl: "https://sonohara.donmai.us/", ...options })
-	}
-}

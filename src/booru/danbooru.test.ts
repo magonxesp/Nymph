@@ -1,11 +1,10 @@
 import "dotenv/config"
 import { describe, expect, it } from "vitest"
-import { DanBooruClient, SonoharaClient } from "./danbooru.js"
+import { DanBooruClient } from "./danbooru.js"
 
-describe.each([
-	{ name: "Danbooru", client: new DanBooruClient() },
-	{ name: "Sonohara", client: new SonoharaClient() }
-])("$name Danbooru 2 API integration", ({ client }) => {
+describe("Danbooru 2 API integration", () => {
+	const client = new DanBooruClient()
+
 	it("retrieves real tag suggestions", async () => {
 		const tags = await client.autocompleteTags("sk")
 

@@ -17,7 +17,6 @@ El input `booru` usa estos nombres exactos:
 | `konachan.net` | konachan.net | Variante SFW de Konachan; preferida para wallpapers. Usa `rating:safe`. |
 | `gelbooru` | gelbooru.com | Incluye contenido +18. Usa `rating:general`. |
 | `danbooru` | danbooru.donmai.us | Incluye contenido +18. Usa `rating:general`. |
-| `sonohara` | sonohara.donmai.us | Trátalo como un board que puede contener +18. Usa `rating:general`. |
 | `konachan` | konachan.com | Versión sin la restricción SFW; incluye +18. Usa `rating:safe`. |
 | `yandere` | yande.re | Incluye contenido +18. Usa `rating:safe`. |
 
