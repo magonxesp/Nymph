@@ -39,7 +39,14 @@ export const getSkill = tool(async ({ name }) => skills.get(name) ?? "Skill no d
 	schema: z.object({ name: z.string().describe("Nombre de la skill") })
 })
 
-const tools = [getSkill, readTextFile, getCurrentDate, ...memoryTools, ...taskTools]
+const tools = [
+	getSkill,
+	readTextFile,
+	getCurrentDate,
+	...booruTools,
+	...memoryTools,
+	...taskTools
+]
 
 export const taskAgentTools = [
 	getSkill,
