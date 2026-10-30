@@ -276,3 +276,43 @@ it.each([
 	expect(invokeMock).not.toHaveBeenCalled()
 	expect(reply).not.toHaveBeenCalled()
 })
+
+it("answers a batch once with every message in the model context", async () => {
+	const chat = { id: -8301, type: "group" as const, title: "Test group" }
+	const contexts = ["@nymph_bot hola", "¿Qué tal?"].map((text, messageIndex) => {
+		const ctx = new Context(
+			{
+				update_id: messageIndex + 1,
+				message: {
+					message_id: messageIndex + 1,
+					date: 123,
+					chat,
+					from: { id: 1, is_bot: false, first_name: "Ana" },
+					entities: messageIndex === 0 ? [{ type: "mention" as const, offset: 0, length: 10 }] : [],
+					text
+				}
+			},
+			new Api("test-token"),
+			me
+		)
+
+		vi.spyOn(ctx, "reply").mockResolvedValue({ message_id: 3, date: 124, chat, text: "Hola Ana" })
+
+		if (!ctx.has("message")) {
+			throw new Error("Expected a message context")
+		}
+
+		return ctx
+	})
+	invokeMock.mockResolvedValue({
+		structuredResponse: { messages: [{ text: "Hola Ana", media: [], replyToMessageId: null, mentionUserIds: [] }] }
+	})
+
+	await handleGroupMessage(contexts[1], contexts)
+
+	expect(invokeMock).toHaveBeenCalledTimes(1)
+	const messages = invokeMock.mock.calls[0][0].messages
+	expect(messages).toHaveLength(2)
+	expect(JSON.parse(messages[0].content)).toMatchObject({ text: "@nymph_bot hola", isTrigger: true })
+	expect(JSON.parse(messages[1].content)).toMatchObject({ text: "¿Qué tal?", isTrigger: false })
+})

@@ -17,6 +17,8 @@
  */
 
 import { Bot } from "grammy"
+import { createMessageDebouncer } from "./message-debounce.js"
+import { log } from "../logging.js"
 import { handleGroupMessage } from "./group.js"
 import { handlePrivateMessage } from "./private.js"
 
@@ -32,15 +34,25 @@ bot.command("start", async (ctx) => {
 	await ctx.reply("Hola 😊")
 })
 
-bot.on("message", async (ctx) => {
-	const isGroup = ctx.chat.type === "group" || ctx.chat.type === "supergroup"
+const handleMessage = createMessageDebouncer(
+	async (contexts) => {
+		const ctx = contexts[contexts.length - 1]
+		const isGroup = ctx.chat.type === "group" || ctx.chat.type === "supergroup"
 
-	if (isGroup) {
-		await handleGroupMessage(ctx)
-		return
-	}
+		if (isGroup) {
+			await handleGroupMessage(ctx, contexts)
+			return
+		}
 
-	if (ctx.chat.type === "private") {
-		await handlePrivateMessage(ctx)
+		if (ctx.chat.type === "private") {
+			await handlePrivateMessage(ctx, contexts)
+		}
+	},
+	(error, ctx) => {
+		log.error({ err: error, chatId: ctx.chat.id }, "Failed to process Telegram message batch")
 	}
+)
+
+bot.on("message", (ctx) => {
+	handleMessage(ctx)
 })

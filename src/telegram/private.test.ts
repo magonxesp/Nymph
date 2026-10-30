@@ -298,3 +298,39 @@ it("passes a document without a caption to the private chat model", async () => 
 		{ filename: "report.pdf", mimeType: "application/pdf", data: "AQID" }
 	])
 })
+
+it("answers a batch once with every message in the model context", async () => {
+	const chat = { id: 8301, type: "private" as const, first_name: "Ana" }
+	const contexts = ["Hola", "¿Qué tal?"].map((text, messageIndex) => {
+		const ctx = new Context(
+			{
+				update_id: messageIndex + 1,
+				message: {
+					message_id: messageIndex + 1,
+					date: 123,
+					chat,
+					from: { id: 1, is_bot: false, first_name: "Ana" },
+					text
+				}
+			},
+			new Api("test-token"),
+			me
+		)
+
+		vi.spyOn(ctx, "reply").mockResolvedValue({ message_id: 3, date: 124, chat, text: "Hola Ana" })
+
+		if (!ctx.has("message")) {
+			throw new Error("Expected a message context")
+		}
+
+		return ctx
+	})
+	invokeMock.mockResolvedValue({ structuredResponse: { text: "Hola Ana", media: [] } })
+
+	await handlePrivateMessage(contexts[1], contexts)
+
+	expect(invokeMock).toHaveBeenCalledTimes(1)
+	const messages = invokeMock.mock.calls[0][0].messages
+	expect(messages).toHaveLength(2)
+	expect(messages.map((message: { content: string }) => message.content)).toEqual(["Hola", "¿Qué tal?"])
+})

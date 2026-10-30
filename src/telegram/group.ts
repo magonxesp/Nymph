@@ -58,34 +58,45 @@ function isGroupTriggered(ctx: Filter<Context, "message">): boolean {
 	return triggeredByPattern || triggeredByMention
 }
 
-export async function handleGroupMessage(ctx: Filter<Context, "message">): Promise<void> {
+export async function handleGroupMessage(
+	ctx: Filter<Context, "message">,
+	pendingMessages: Filter<Context, "message">[] = [ctx]
+): Promise<void> {
 	const chatId = ctx.chat.id
 	const history = getGroupChatHistory(new ChatId(String(chatId), ChatPlatform.Telegram))
 
 	try {
-		const attachments = await getTelegramAttachments(ctx.message, ctx.api)
+		let triggerContext: Filter<Context, "message"> | undefined
 
-		if (attachments === null) {
-			return
+		for (const messageContext of pendingMessages) {
+			const attachments = await getTelegramAttachments(messageContext.message, messageContext.api)
+
+			if (attachments === null) {
+				continue
+			}
+
+			history.addMessage(createGroupMessage(messageContext, "user", attachments))
+
+			if (isGroupTriggered(messageContext)) {
+				triggerContext = messageContext
+			}
 		}
 
-		history.addMessage(createGroupMessage(ctx, "user", attachments))
-
-		if (!isGroupTriggered(ctx)) {
+		if (triggerContext === undefined) {
 			return
 		}
 
 		const historySnapshot = history.messages
-		const messages = history.toModelMessages(String(ctx.message.message_id))
+		const messages = history.toModelMessages(String(triggerContext.message.message_id))
 		const result = await agent.invoke(
 			{ messages },
 			{
 				callbacks: [new PinoLangChainHandler(chatId)],
 				configurable: {
 					requesterId:
-						ctx.message.sender_chat || ctx.message.from?.id === undefined
+						triggerContext.message.sender_chat || triggerContext.message.from?.id === undefined
 							? undefined
-							: toUserId(ctx.message.from),
+							: toUserId(triggerContext.message.from),
 					chat: {
 						id: history.chatId.value,
 						platform: history.chatId.platform,

@@ -31,26 +31,39 @@ import { TelegramMessageSender } from "./message-sender.js"
 
 const agent = await createPrivateChatAgent()
 
-export async function handlePrivateMessage(ctx: Filter<Context, "message">): Promise<void> {
+export async function handlePrivateMessage(
+	ctx: Filter<Context, "message">,
+	pendingMessages: Filter<Context, "message">[] = [ctx]
+): Promise<void> {
 	const chatId = ctx.chat.id
-
-	const text = ctx.message.text ?? ctx.message.caption
 	const history = getPrivateChatHistory(new ChatId(String(chatId), ChatPlatform.Telegram))
 
 	try {
-		const attachments = await getTelegramAttachments(ctx.message, ctx.api)
+		let addedMessages = false
 
-		if (attachments === null) {
+		for (const messageContext of pendingMessages) {
+			const text = messageContext.message.text ?? messageContext.message.caption
+			const attachments = await getTelegramAttachments(messageContext.message, messageContext.api)
+
+			if (attachments === null) {
+				continue
+			}
+
+			const { images, files } = attachments
+
+			if (!text && images.length === 0 && files.length === 0) {
+				continue
+			}
+
+			const placeholder = images.length ? "[imagen sin texto]" : "[archivo sin texto]"
+			history.addUserMessage(text ?? placeholder, images, files)
+			addedMessages = true
+		}
+
+		if (!addedMessages) {
 			return
 		}
 
-		const { images, files } = attachments
-		if (!text && images.length === 0 && files.length === 0) {
-			return
-		}
-
-		const placeholder = images.length ? "[imagen sin texto]" : "[archivo sin texto]"
-		history.addUserMessage(text ?? placeholder, images, files)
 		const historySnapshot = history.messages
 		const messages = historySnapshot.map(toModelMessage)
 		const result = await agent.invoke(
