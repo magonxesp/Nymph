@@ -16,6 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { ChatPlatform } from "../chat/platform.js"
+import { toUserId } from "./user-id.js"
 import { ChatId } from "../chat/id.js"
 import type { Context, Filter } from "grammy"
 import { createPrivateChatAgent } from "../agent/agent.js"
@@ -25,7 +27,7 @@ import { getPrivateChatHistory } from "../chat/chat.js"
 import { toModelMessage } from "../chat/message.js"
 import { getTelegramAttachments } from "./attachment.js"
 import { privateResponseSchema } from "../chat/response.js"
-import { sendTelegramResponse } from "./response.js"
+import { TelegramMessageSender } from "./message-sender.js"
 
 const agent = await createPrivateChatAgent()
 
@@ -33,7 +35,7 @@ export async function handlePrivateMessage(ctx: Filter<Context, "message">): Pro
 	const chatId = ctx.chat.id
 
 	const text = ctx.message.text ?? ctx.message.caption
-	const history = getPrivateChatHistory(ChatId.forTelegram(chatId))
+	const history = getPrivateChatHistory(new ChatId(String(chatId), ChatPlatform.Telegram))
 
 	try {
 		const attachments = await getTelegramAttachments(ctx.message, ctx.api)
@@ -56,7 +58,7 @@ export async function handlePrivateMessage(ctx: Filter<Context, "message">): Pro
 			{
 				callbacks: [new PinoLangChainHandler(chatId)],
 				configurable: {
-					requesterId: ctx.message.from?.id === undefined ? undefined : String(ctx.message.from.id),
+					requesterId: ctx.message.from?.id === undefined ? undefined : toUserId(ctx.message.from),
 					chat: {
 						id: history.chatId.value,
 						platform: history.chatId.platform,
@@ -71,9 +73,9 @@ export async function handlePrivateMessage(ctx: Filter<Context, "message">): Pro
 			throw new Error("The model returned an empty answer")
 		}
 
-		for await (const sent of sendTelegramResponse(ctx, answer)) {
+		for await (const sent of TelegramMessageSender.fromContext(ctx).send(answer)) {
 			log.trace({ sent, chatId }, "Sent assistant message")
-			await history.addAssistantMessage(sent.text, sent.isText ? undefined : sent.text)
+			await history.addAssistantMessage(sent.message.text, sent.isText ? undefined : sent.message.text)
 		}
 	} catch (error) {
 		log.error({ err: error, chatId }, "Failed to answer Telegram message")

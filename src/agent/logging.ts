@@ -70,7 +70,7 @@ export class PinoLangChainHandler extends BaseCallbackHandler {
 
 	private readonly agentsByRun = new Map<string, string>()
 
-	constructor(private readonly chatId: number) {
+	constructor(private readonly chatId: string | number) {
 		super()
 	}
 

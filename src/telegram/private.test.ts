@@ -1,3 +1,4 @@
+import { UserId } from "../chat/user-id.js"
 /**
  * Nymph
  * Copyright (C) 2026  MagonxESP
@@ -112,17 +113,19 @@ describe("handlePrivateMessage images", () => {
 		await handlePrivateMessage(ctx)
 
 		expect(invokeMock.mock.calls[0][1].configurable).toEqual({
-			requesterId: "1",
+			requesterId: new UserId("1", "Ana", ChatPlatform.Telegram),
 			chat: { id: String(chat.id), platform: ChatPlatform.Telegram, type: "private" }
 		})
 		expect(reply).toHaveBeenCalledWith("Un pequeño comentario")
 		expect(photo).toHaveBeenCalledWith(media[0].url, {
 			reply_parameters: undefined
 		})
-		expect(getPrivateChatHistory(ChatId.forTelegram(chat.id)).messages.at(-1)?.content).toBe(media[0].url)
-		expect(getPrivateChatHistory(ChatId.forTelegram(chat.id)).messages.at(-1)?.images).toEqual([
-			"data:image/jpeg;base64,AQID"
-		])
+		expect(getPrivateChatHistory(new ChatId(String(chat.id), ChatPlatform.Telegram)).messages.at(-1)?.content).toBe(
+			media[0].url
+		)
+		expect(
+			getPrivateChatHistory(new ChatId(String(chat.id), ChatPlatform.Telegram)).messages.at(-1)?.images
+		).toEqual(["data:image/jpeg;base64,AQID"])
 
 		await handlePrivateMessage(ctx)
 
@@ -192,7 +195,7 @@ describe("handlePrivateMessage images", () => {
 			}
 		])
 		expect(reply).toHaveBeenCalledWith("Veo una imagen")
-		expect(getPrivateChatHistory(ChatId.forTelegram("8001")).messages[0].images).toEqual([
+		expect(getPrivateChatHistory(new ChatId("8001", ChatPlatform.Telegram)).messages[0].images).toEqual([
 			"data:image/jpeg;base64,AQID"
 		])
 	})
@@ -233,7 +236,7 @@ it.each([
 
 	await handlePrivateMessage(ctx)
 
-	expect(getPrivateChatHistory(ChatId.forTelegram(chat.id)).messages).toEqual([])
+	expect(getPrivateChatHistory(new ChatId(String(chat.id), ChatPlatform.Telegram)).messages).toEqual([])
 	expect(getFile).not.toHaveBeenCalled()
 	expect(invokeMock).not.toHaveBeenCalled()
 	expect(reply).not.toHaveBeenCalled()
@@ -291,7 +294,7 @@ it("passes a document without a caption to the private chat model", async () => 
 			file_data: "data:application/pdf;base64,AQID"
 		}
 	])
-	expect(getPrivateChatHistory(ChatId.forTelegram("8003")).messages[0].files).toEqual([
+	expect(getPrivateChatHistory(new ChatId("8003", ChatPlatform.Telegram)).messages[0].files).toEqual([
 		{ filename: "report.pdf", mimeType: "application/pdf", data: "AQID" }
 	])
 })

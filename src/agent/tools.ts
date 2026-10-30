@@ -20,10 +20,11 @@ import { tool } from "langchain"
 import { skills } from "./skill.js"
 import z from "zod"
 import fs from "node:fs/promises"
-import { memoryTools } from "../memory/tools.js"
+import { editMemory, queryMemories, memoryTools } from "../memory/tools.js"
 import { browserResearch } from "./browser.js"
 import { booruTools } from "../booru/tools.js"
 import { getCurrentDate } from "../time/tools.js"
+import { taskTools } from "../task/tools.js"
 
 export const readTextFile = tool(async ({ path }) => await fs.readFile(path), {
 	name: "read_text_file",
@@ -38,6 +39,16 @@ export const getSkill = tool(async ({ name }) => skills.get(name) ?? "Skill no d
 	schema: z.object({ name: z.string().describe("Nombre de la skill") })
 })
 
-const tools = [getSkill, readTextFile, getCurrentDate, browserResearch, ...booruTools, ...memoryTools]
+const tools = [getSkill, readTextFile, getCurrentDate, ...memoryTools, ...taskTools]
+
+export const taskAgentTools = [
+	getSkill,
+	readTextFile,
+	getCurrentDate,
+	queryMemories,
+	editMemory,
+	browserResearch,
+	...booruTools
+]
 
 export default tools

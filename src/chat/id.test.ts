@@ -11,15 +11,13 @@ describe("ChatId", () => {
 		expect(chatId.toMapKey()).toBe("telegram:123")
 	})
 
-	it.each([123, "123", -100123, "-100123", "9007199254740993"])("creates a Telegram chat ID from %s", (value) => {
-		const chatId = ChatId.forTelegram(value)
+	it.each(["123", "-100123", "9007199254740993", "room:general"])("preserves the native string ID %s", (value) => {
+		const chatId = new ChatId(value, ChatPlatform.Telegram)
 
-		expect(chatId.value).toBe(String(value))
-		expect(chatId.platform).toBe(ChatPlatform.Telegram)
+		expect(chatId.value).toBe(value)
 	})
 
 	it.each(["", " "])("rejects a blank chat ID: %j", (value) => {
 		expect(() => new ChatId(value, ChatPlatform.Telegram)).toThrow("The chat ID must not be blank")
-		expect(() => ChatId.forTelegram(value)).toThrow("The chat ID must not be blank")
 	})
 })

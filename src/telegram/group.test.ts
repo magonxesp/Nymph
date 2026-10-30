@@ -1,3 +1,4 @@
+import { UserId } from "../chat/user-id.js"
 /**
  * Nymph
  * Copyright (C) 2026  MagonxESP
@@ -156,7 +157,7 @@ describe("handleGroupMessage images", () => {
 					{
 						text: "Un pequeño comentario",
 						media,
-						replyToMessageId: 10,
+						replyToMessageId: "10",
 						mentionUserIds: ["1"]
 					}
 				]
@@ -189,7 +190,7 @@ describe("handleGroupMessage images", () => {
 		await handleGroupMessage(ctx)
 
 		expect(invokeMock.mock.calls[0][1].configurable).toEqual({
-			requesterId: "1",
+			requesterId: new UserId("1", "Ana", ChatPlatform.Telegram),
 			chat: { id: String(chat.id), platform: ChatPlatform.Telegram, type: "group" }
 		})
 		expect(reply).toHaveBeenCalledWith("Ana Un pequeño comentario", {
@@ -212,10 +213,12 @@ describe("handleGroupMessage images", () => {
 				allow_sending_without_reply: true
 			}
 		})
-		expect(getGroupChatHistory(ChatId.forTelegram(chat.id)).messages.at(-1)?.text).toBe(media[0].url)
-		expect(getGroupChatHistory(ChatId.forTelegram(chat.id)).messages.at(-1)?.images).toEqual([
-			"data:image/jpeg;base64,AQID"
-		])
+		expect(getGroupChatHistory(new ChatId(String(chat.id), ChatPlatform.Telegram)).messages.at(-1)?.text).toBe(
+			media[0].url
+		)
+		expect(getGroupChatHistory(new ChatId(String(chat.id), ChatPlatform.Telegram)).messages.at(-1)?.images).toEqual(
+			["data:image/jpeg;base64,AQID"]
+		)
 
 		await handleGroupMessage(ctx)
 
@@ -268,7 +271,7 @@ it.each([
 
 	await handleGroupMessage(ctx)
 
-	expect(getGroupChatHistory(ChatId.forTelegram(chat.id)).messages).toEqual([])
+	expect(getGroupChatHistory(new ChatId(String(chat.id), ChatPlatform.Telegram)).messages).toEqual([])
 	expect(getFile).not.toHaveBeenCalled()
 	expect(invokeMock).not.toHaveBeenCalled()
 	expect(reply).not.toHaveBeenCalled()

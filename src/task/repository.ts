@@ -6,11 +6,13 @@ import type { ChatId } from "../chat/id.js"
 import { database } from "../database.js"
 import type { Embedding } from "../memory/embedding.js"
 import { Task, TaskId } from "./task.js"
+import { taskStatusSchema, type TaskStatus } from "./status.js"
 
 export type TaskSearchResult = { task: Task; distance: number }
 
 export interface TaskRepository {
 	find(chatId: ChatId, taskId: TaskId): Promise<Task | undefined>
+	listByStatus(chatId: ChatId, status: TaskStatus): Promise<Task[]>
 	insert(task: Task): Promise<Task>
 	update(task: Task): Promise<Task | undefined>
 	search(chatId: ChatId, embedding: Embedding, limit?: number): Promise<TaskSearchResult[]>
@@ -21,8 +23,11 @@ const rowSchema = z.object({
 	task_id: z.string(),
 	chat_id: z.string(),
 	platform: z.enum(ChatPlatform),
+	chat_type: z.enum(["private", "group"]),
 	requester_id: z.string(),
-	status: z.string(),
+	requester_name: z.string(),
+	requester_platform: z.enum(ChatPlatform),
+	status: taskStatusSchema,
 	prompt: z.string(),
 	agent: z.string().nullable(),
 	result: z.json(),
@@ -43,7 +48,8 @@ function toTask(row: unknown): Task {
 		taskId: data.task_id,
 		chatId: data.chat_id,
 		platform: data.platform,
-		requesterId: data.requester_id,
+		chatType: data.chat_type,
+		requesterId: { value: data.requester_id, name: data.requester_name, platform: data.requester_platform },
 		status: data.status,
 		prompt: data.prompt,
 		agent: data.agent,
@@ -57,7 +63,10 @@ function toTask(row: unknown): Task {
 
 function values(task: Task) {
 	return {
-		requester_id: task.requesterId,
+		chat_type: task.chatType,
+		requester_id: task.requesterId.value,
+		requester_name: task.requesterId.name,
+		requester_platform: task.requesterId.platform,
 		status: task.status,
 		prompt: task.prompt,
 		agent: task.agent,
@@ -75,6 +84,13 @@ export class PostgresTaskRepository implements TaskRepository {
 			.where({ chat_id: chatId.value, platform: chatId.platform, task_id: taskId.value })
 			.first()
 		return row === undefined ? undefined : toTask(row)
+	}
+
+	public async listByStatus(chatId: ChatId, status: TaskStatus): Promise<Task[]> {
+		const rows: unknown[] = await this.connection("tasks")
+			.where({ chat_id: chatId.value, platform: chatId.platform, status })
+			.orderBy("id", "asc")
+		return rows.map(toTask)
 	}
 
 	public async insert(task: Task): Promise<Task> {
@@ -131,6 +147,13 @@ export class InMemoryTaskRepository implements TaskRepository {
 
 	public async find(chatId: ChatId, taskId: TaskId): Promise<Task | undefined> {
 		return this.tasks.get(this.key(chatId, taskId))
+	}
+
+	public async listByStatus(chatId: ChatId, status: TaskStatus): Promise<Task[]> {
+		return [...this.tasks.values()].filter(
+			(task) =>
+				task.chatId.value === chatId.value && task.chatId.platform === chatId.platform && task.status === status
+		)
 	}
 
 	public async insert(task: Task): Promise<Task> {
@@ -228,6 +251,10 @@ export class CachedTaskRepository implements TaskRepository {
 		})
 	}
 
+	public listByStatus(chatId: ChatId, status: TaskStatus): Promise<Task[]> {
+		return this.persistent.listByStatus(chatId, status)
+	}
+
 	public insert(task: Task): Promise<Task> {
 		return this.serialize(task.chatId, task.taskId, async () => {
 			const savedTask = await this.persistent.insert(task)
@@ -252,3 +279,5 @@ export class CachedTaskRepository implements TaskRepository {
 		return this.persistent.search(chatId, embedding, limit)
 	}
 }
+
+export const taskRepository = new CachedTaskRepository()

@@ -27,9 +27,9 @@ import type { ChatReference } from "./snapshot.js"
 describe("getChatHistorySnapshot", () => {
 	it("selects the private or group history using the configured chat type", () => {
 		const id = "snapshot-routing"
-		getPrivateChatHistory(ChatId.forTelegram(id)).addUserMessage("Private message")
-		getGroupChatHistory(ChatId.forTelegram(id)).addMessage({
-			id: 1,
+		getPrivateChatHistory(new ChatId(String(id), ChatPlatform.Telegram)).addUserMessage("Private message")
+		getGroupChatHistory(new ChatId(String(id), ChatPlatform.Telegram)).addMessage({
+			id: "1",
 			role: "user",
 			senderId: "1",
 			senderName: "Ana",
@@ -47,7 +47,7 @@ describe("getChatHistorySnapshot", () => {
 		expect(groupSnapshot.chatId.platform).toBe(ChatPlatform.Telegram)
 		expect(groupSnapshot.messages).toEqual([
 			{
-				id: 1,
+				id: "1",
 				role: "user",
 				senderId: "1",
 				senderName: "Ana",

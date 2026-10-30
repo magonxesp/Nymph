@@ -27,7 +27,7 @@ export const responseMediaSchema = z
 
 export const responseMediaListSchema = z
 	.array(responseMediaSchema)
-	.describe("Archivos que se enviarán a Telegram usando sus URLs originales. Lista vacía si no hay archivos")
+	.describe("Archivos que se enviarán al chat usando sus URLs originales. Lista vacía si no hay archivos")
 
 export const privateResponseSchema = z
 	.object({

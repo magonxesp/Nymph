@@ -23,12 +23,12 @@ import type { GroupMessage } from "../chat/group.js"
 export type MemoryHistoryMessage = {
 	role: "user" | "assistant"
 	text: string
-	id?: number
+	id?: string
 	senderId?: string
 	senderName?: string
 	timestamp?: number
-	replyToMessageId?: number
-	mentions?: { text: string; userId: string | null }[]
+	replyToMessageId?: string
+	mentions?: GroupMessage["mentions"]
 }
 
 export type MemoryHistorySnapshot = ChatHistorySnapshot<ChatMessage | GroupMessage>

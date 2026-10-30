@@ -21,7 +21,7 @@ export function sendTelegramResponseToChat(api: Api, chatId: string | number, re
 	return sendResponse(new TelegramChatSender(api, chatId), response)
 }
 
-async function* sendResponse(sender: TelegramSender, response: TelegramResponse) {
+export async function* sendResponse(sender: TelegramSender, response: TelegramResponse) {
 	const replyOptions = ((): TelegramSendOptions => {
 		if (response.replyToMessageId === undefined) {
 			return { reply_parameters: undefined }

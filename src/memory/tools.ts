@@ -18,12 +18,11 @@
 
 import { tool } from "langchain"
 import { z } from "zod"
-import type { RunnableConfig } from "@langchain/core/runnables"
 import { log } from "../logging.js"
 import { createMemoryHistory } from "./history.js"
 import { ChatId } from "../chat/id.js"
 import { getChatHistorySnapshot } from "../chat/snapshot.js"
-import type { ChatReference } from "../chat/snapshot.js"
+import { getConfiguredChat } from "../chat/configuration.js"
 import { MemoryContent } from "./content.js"
 import { embedMemoryTexts } from "./embedding.js"
 import { MemoryId } from "./id.js"
@@ -42,16 +41,6 @@ function memoryError(error: unknown, toolName: string) {
 	return {
 		error: "No se pudo completar la operación de memoria. No confirmes que se haya realizado."
 	}
-}
-
-function getConfiguredChat(config: RunnableConfig): ChatReference {
-	const chat: ChatReference | undefined = config.configurable?.chat
-
-	if (!chat) {
-		throw new Error("Chat configuration is required")
-	}
-
-	return chat
 }
 
 export const createMemory = tool(

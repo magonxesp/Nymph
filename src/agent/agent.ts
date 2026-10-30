@@ -23,31 +23,24 @@ import { createAgent, providerStrategy } from "langchain"
 import { groupResponseSchema } from "../chat/group.js"
 import { privateResponseSchema } from "../chat/response.js"
 import { chatModel, openAIApiKey, promptsDir } from "../env.js"
-import { loadSkills, skills } from "./skill.js"
+import { behaviorSystemPrompt, skillIndex } from "./context.js"
 import tools from "./tools.js"
 import { log } from "../logging.js"
 
 export { createMemoryAgent } from "./memory.js"
-
-const behaviorSystemPrompt = await readFile(path.join(promptsDir, "behavior.md"), "utf8")
-const availableSkills = await loadSkills()
-const skillList = JSON.stringify(availableSkills, undefined, 2)
-
-const skillIndex =
-	skills.size > 0
-		? `Skills disponibles (carga solo las necesarias con get_skill):\n${skillList}`
-		: "No hay skills adicionales disponibles."
+export { createTaskAgent } from "./task.js"
 
 if (!openAIApiKey) {
 	throw new Error("NYMPH_OPENAI_API_KEY is required")
 }
 
-log.info({ skills: availableSkills.map((skill) => skill.name) }, "Skills loaded")
-
 export async function createPrivateChatAgent() {
 	const privateResponsePrompt = await readFile(path.join(promptsDir, "private-response.md"), "utf8")
+	const capabilitiesPrompt = await readFile(path.join(promptsDir, "capabilities.md"), "utf8")
 
-	const systemPrompt = [behaviorSystemPrompt, privateResponsePrompt, skillIndex].filter(Boolean).join("\n\n")
+	const systemPrompt = [behaviorSystemPrompt, capabilitiesPrompt, privateResponsePrompt, skillIndex]
+		.filter(Boolean)
+		.join("\n\n")
 
 	log.debug({ systemPrompt }, "System prompt built")
 
@@ -74,8 +67,11 @@ export async function createPrivateChatAgent() {
 
 export async function createGroupChatAgent() {
 	const groupResponsePrompt = await readFile(path.join(promptsDir, "group-response.md"), "utf8")
+	const capabilitiesPrompt = await readFile(path.join(promptsDir, "capabilities.md"), "utf8")
 
-	const systemPrompt = [behaviorSystemPrompt, groupResponsePrompt, skillIndex].filter(Boolean).join("\n\n")
+	const systemPrompt = [behaviorSystemPrompt, capabilitiesPrompt, groupResponsePrompt, skillIndex]
+		.filter(Boolean)
+		.join("\n\n")
 
 	log.debug({ systemPrompt }, "System prompt built")
 

@@ -5,8 +5,6 @@ description: Busca un post sobre un tema concreto en Rule34 cuando el usuario lo
 
 # Búsqueda en Rule34
 
-En el chat, carga la skill `task` y encola las búsquedas que requieran Rule34. Cuando ejecutes la tarea, sigue estas instrucciones directamente.
-
 Cuando el usuario pida buscar algo concreto en Rule34:
 
 Si el usuario permite elección propia (por ejemplo, «elige tú», «lo que quieras» o «sorpréndeme»), usa `rule34_posts` siguiendo el flujo de búsqueda libre descrito más abajo. Esta indicación tiene prioridad sobre el uso de `rule34_random_post` de los pasos siguientes. Respeta los temas y las preferencias que haya indicado el usuario.

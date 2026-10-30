@@ -23,11 +23,12 @@ import type { ChatMessage } from "./chat.js"
 import { getGroupChatHistory } from "./group.js"
 import type { GroupMessage } from "./group.js"
 import type { ChatHistorySnapshot } from "./history.js"
+import type { ChatType } from "./type.js"
 
 export type ChatReference = {
 	id: string
 	platform: ChatPlatform
-	type: "private" | "group"
+	type: ChatType
 }
 
 export function getChatHistorySnapshot(chat: ChatReference): ChatHistorySnapshot<ChatMessage | GroupMessage> {

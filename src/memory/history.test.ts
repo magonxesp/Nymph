@@ -1,3 +1,4 @@
+import { UserId } from "../chat/user-id.js"
 /**
  * Nymph
  * Copyright (C) 2026  MagonxESP
@@ -16,6 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { ChatPlatform } from "../chat/platform.js"
 import { describe, expect, it } from "vitest"
 import { ChatId } from "../chat/id.js"
 import { createMemoryHistory } from "./history.js"
@@ -23,7 +25,7 @@ import { createMemoryHistory } from "./history.js"
 describe("Memory history snapshot", () => {
 	it("includes private chat text without binary attachments", () => {
 		const context = createMemoryHistory({
-			chatId: ChatId.forTelegram("test"),
+			chatId: new ChatId("test", ChatPlatform.Telegram),
 			messages: [
 				{
 					role: "user",
@@ -46,18 +48,18 @@ describe("Memory history snapshot", () => {
 	})
 
 	it("preserves attribution and reply metadata for shared group memory", () => {
-		const mentions = [{ text: "Ana", userId: "1" }]
+		const mentions = [{ text: "Ana", userId: new UserId("1", "Ana", ChatPlatform.Telegram) }]
 		const context = createMemoryHistory({
-			chatId: ChatId.forTelegram("test"),
+			chatId: new ChatId("test", ChatPlatform.Telegram),
 			messages: [
 				{
-					id: 5,
+					id: "5",
 					role: "user",
 					senderId: "2",
 					senderName: "Luis",
 					text: "Estoy de acuerdo, Ana.",
 					timestamp: 123,
-					replyToMessageId: 4,
+					replyToMessageId: "4",
 					mentions,
 					images: ["data:image/png;base64,SECRET"]
 				}
@@ -67,14 +69,14 @@ describe("Memory history snapshot", () => {
 		mentions[0].text = "Changed"
 
 		expect(context[0]).toEqual({
-			id: 5,
+			id: "5",
 			role: "user",
 			senderId: "2",
 			senderName: "Luis",
 			text: "Estoy de acuerdo, Ana.",
 			timestamp: 123,
-			replyToMessageId: 4,
-			mentions: [{ text: "Ana", userId: "1" }]
+			replyToMessageId: "4",
+			mentions: [{ text: "Ana", userId: new UserId("1", "Ana", ChatPlatform.Telegram) }]
 		})
 		expect(JSON.stringify(context)).not.toContain("SECRET")
 	})

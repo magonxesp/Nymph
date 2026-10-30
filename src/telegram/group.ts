@@ -16,20 +16,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { ChatPlatform } from "../chat/platform.js"
+import { toUserId } from "./user-id.js"
 import { ChatId } from "../chat/id.js"
 import type { Context, Filter } from "grammy"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { createGroupChatAgent } from "../agent/agent.js"
-import { prepareGroupReplies } from "./group-response.js"
+import { prepareGroupReplies } from "../chat/group-response.js"
 import { log } from "../logging.js"
 import { PinoLangChainHandler } from "../agent/logging.js"
 import { getGroupChatHistory } from "../chat/group.js"
+import { mentionsBot } from "./group-triggers.js"
 import { createGroupMessage } from "./group-message.js"
-import { compileGroupTriggers, matchesGroupTrigger, mentionsBot } from "../chat/group-triggers.js"
+import { compileGroupTriggers, matchesGroupTrigger } from "../chat/group-triggers.js"
 import { rootDir } from "../env.js"
 import { getTelegramAttachments } from "./attachment.js"
-import { sendTelegramResponse } from "./response.js"
+import { TelegramMessageSender } from "./message-sender.js"
 
 const groupTriggers = compileGroupTriggers(await readFile(path.join(rootDir, "group-triggers.txt"), "utf8"))
 
@@ -57,7 +60,7 @@ function isGroupTriggered(ctx: Filter<Context, "message">): boolean {
 
 export async function handleGroupMessage(ctx: Filter<Context, "message">): Promise<void> {
 	const chatId = ctx.chat.id
-	const history = getGroupChatHistory(ChatId.forTelegram(chatId))
+	const history = getGroupChatHistory(new ChatId(String(chatId), ChatPlatform.Telegram))
 
 	try {
 		const attachments = await getTelegramAttachments(ctx.message, ctx.api)
@@ -73,7 +76,7 @@ export async function handleGroupMessage(ctx: Filter<Context, "message">): Promi
 		}
 
 		const historySnapshot = history.messages
-		const messages = history.toModelMessages(ctx.message.message_id)
+		const messages = history.toModelMessages(String(ctx.message.message_id))
 		const result = await agent.invoke(
 			{ messages },
 			{
@@ -82,7 +85,7 @@ export async function handleGroupMessage(ctx: Filter<Context, "message">): Promi
 					requesterId:
 						ctx.message.sender_chat || ctx.message.from?.id === undefined
 							? undefined
-							: String(ctx.message.from.id),
+							: toUserId(ctx.message.from),
 					chat: {
 						id: history.chatId.value,
 						platform: history.chatId.platform,
@@ -91,20 +94,13 @@ export async function handleGroupMessage(ctx: Filter<Context, "message">): Promi
 				}
 			}
 		)
-		const answers = prepareGroupReplies(result.structuredResponse, historySnapshot)
+		const answers = prepareGroupReplies(result.structuredResponse, historySnapshot, history.chatId.platform)
+		const sender = TelegramMessageSender.fromContext(ctx)
 
 		for (const answer of answers) {
-			for await (const sent of sendTelegramResponse(ctx, answer)) {
+			for await (const sent of sender.send(answer)) {
 				log.trace({ sent, chatId }, "Sent assistant message")
-				await history.addAssistantMessage(
-					ctx,
-					{
-						message: sent.message,
-						text: sent.text,
-						mentions: sent.isText ? answer.mentions : []
-					},
-					sent.isText ? undefined : sent.text
-				)
+				await history.addAssistantMessage(sent.message, sent.isText ? undefined : sent.message.text)
 			}
 		}
 	} catch (error) {

@@ -25,7 +25,7 @@ export type ChatHistorySnapshot<Message> = {
 	lastMessageSequence: number
 }
 
-export class ChatHistory<Message> extends EventEmitter<{
+export abstract class ChatHistory<Message> extends EventEmitter<{
 	snapshot: [snapshot: ChatHistorySnapshot<Message>]
 }> {
 	private readonly _messages: Message[] = []
@@ -57,10 +57,14 @@ export class ChatHistory<Message> extends EventEmitter<{
 		}
 	}
 
+	// Clone mutable message data to isolate snapshots from history. Each implementation
+	// preserves its domain classes because structuredClone discards custom prototypes.
+	protected abstract cloneMessage(message: Message): Message
+
 	public get snapshot(): ChatHistorySnapshot<Message> {
 		return {
 			chatId: this.chatId,
-			messages: structuredClone(this._messages),
+			messages: this._messages.map((message) => this.cloneMessage(message)),
 			lastMessageSequence: this.messageSequence
 		}
 	}

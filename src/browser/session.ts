@@ -3,7 +3,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js"
 import type { Server } from "@modelcontextprotocol/sdk/server/index.js" with { "resolution-mode": "require" }
 import { CallToolResultSchema } from "@modelcontextprotocol/sdk/types.js"
-import type { Tool } from "@modelcontextprotocol/sdk/types.js"
+import type { CallToolResult, Tool } from "@modelcontextprotocol/sdk/types.js"
 import { chromium } from "playwright"
 import type { Browser, BrowserContext } from "playwright"
 import { mkdtemp, open, rm } from "node:fs/promises"
@@ -129,11 +129,11 @@ export class BrowserSession {
 			"Browser MCP tool started"
 		)
 		try {
-			const rawResult: unknown = await this.client.callTool({ name, arguments: args }, CallToolResultSchema, {
+			// The SDK validates this schema, but its return type also includes compatibility results.
+			const result = (await this.client.callTool({ name, arguments: args }, CallToolResultSchema, {
 				signal: this.signal,
 				timeout: Math.max(1, Math.min(15_000, this.deadline - Date.now()))
-			})
-			const result = CallToolResultSchema.parse(rawResult)
+			})) as CallToolResult
 			const text = result.content.flatMap((content) => (content.type === "text" ? [content.text] : [])).join("\n")
 			const output = (await this.inlineSnapshot(text)).slice(0, 12_000)
 

@@ -8,12 +8,10 @@ import {
 	booruAutocompleteTags,
 	booruPosts,
 	booruRandomPost,
-	booruTools,
 	rule34AutocompleteTags,
 	rule34RandomPost
 } from "./tools.js"
 import { downloadImages } from "../media/remote.js"
-import agentTools from "../agent/tools.js"
 import { Rule34Client } from "./gelbooru.js"
 
 vi.mock("../media/remote.js", () => ({ downloadImages: vi.fn() }))
@@ -50,12 +48,6 @@ afterEach(() => {
 })
 
 describe("Booru tools", () => {
-	it("registers all booru tools with the agent", () => {
-		for (const tool of booruTools) {
-			expect(agentTools.filter((agentTool) => agentTool.name === tool.name)).toEqual([tool])
-		}
-	})
-
 	it.each(boards.booruNames.filter((board) => board !== "rule34"))(
 		"selects %s and forwards the tag",
 		async (booru) => {

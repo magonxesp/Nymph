@@ -26,10 +26,6 @@ export class ChatId {
 		this.validate()
 	}
 
-	public static forTelegram(value: string | number): ChatId {
-		return new ChatId(String(value), ChatPlatform.Telegram)
-	}
-
 	public toMapKey(): string {
 		return `${this.platform}:${this.value}`
 	}

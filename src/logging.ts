@@ -29,7 +29,8 @@ const transport = pino.transport({
 
 export const log = pino(
 	{
-		level: process.env.NYMPH_LOG_LEVEL ?? "debug"
+		level: process.env.NYMPH_LOG_LEVEL ?? "debug",
+		serializers: { error: pino.stdSerializers.err }
 	},
 	transport
 )

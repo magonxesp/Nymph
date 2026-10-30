@@ -23,18 +23,18 @@ import { toModelMessage } from "./message.js"
 import { responseMediaListSchema } from "./response.js"
 import type { ResponseMedia } from "./response.js"
 import { ChatHistory } from "./history.js"
+import { UserId } from "./user-id.js"
 import type { ChatId } from "./id.js"
-import { createGroupMessage, GroupMessageContext, GroupMessageOptions } from "../telegram/group-message.js"
 import { downloadImages } from "../media/remote.js"
 import { log } from "../logging.js"
 
 export type GroupMention = {
 	text: string
-	userId: string | null
+	userId: UserId | null
 }
 
 export type GroupMessage = {
-	id: number
+	id: string
 	role: "user" | "assistant"
 	senderId: string
 	senderName: string
@@ -42,7 +42,7 @@ export type GroupMessage = {
 	images?: string[]
 	files?: ChatFile[]
 	timestamp: number
-	replyToMessageId?: number
+	replyToMessageId?: string
 	mentions?: GroupMention[]
 }
 
@@ -51,8 +51,8 @@ const groupResponseMessageSchema = z
 		text: z.string().describe("Texto de la respuesta, sin Markdown ni HTML"),
 		media: responseMediaListSchema,
 		replyToMessageId: z
-			.number()
-			.int()
+			.string()
+			.min(1)
 			.nullable()
 			.describe(
 				"Por defecto null. ID de un mensaje del historial solo para distinguir hilos entre muchos mensajes o aclarar una respuesta específica que sería ambigua sin cita"
@@ -76,7 +76,7 @@ export type GroupResponse = {
 	messages: {
 		text: string
 		media: ResponseMedia[]
-		replyToMessageId: number | null
+		replyToMessageId: string | null
 		mentionUserIds: string[]
 	}[]
 }
@@ -88,7 +88,24 @@ export class GroupChatHistory extends ChatHistory<GroupMessage> {
 		super(chatId, GroupChatHistory.messageCountLimit)
 	}
 
-	public toModelMessages(triggerMessageId: number): (HumanMessage | AIMessage)[] {
+	protected override cloneMessage(message: GroupMessage): GroupMessage {
+		return {
+			...message,
+			...(message.images && { images: [...message.images] }),
+			...(message.files && { files: message.files.map((file) => ({ ...file })) }),
+			...(message.mentions && {
+				mentions: message.mentions.map((mention) => ({
+					...mention,
+					userId:
+						mention.userId === null
+							? null
+							: new UserId(mention.userId.value, mention.userId.name, mention.userId.platform)
+				}))
+			})
+		}
+	}
+
+	public toModelMessages(triggerMessageId: string): (HumanMessage | AIMessage)[] {
 		return this.messages.map((message) => {
 			const content = JSON.stringify(
 				{
@@ -116,12 +133,7 @@ export class GroupChatHistory extends ChatHistory<GroupMessage> {
 		})
 	}
 
-	public async addAssistantMessage(
-		ctx: GroupMessageContext,
-		options: GroupMessageOptions = {},
-		mediaUrl?: string
-	): Promise<void> {
-		const message = createGroupMessage(ctx, "assistant", options)
+	public async addAssistantMessage(message: GroupMessage, mediaUrl?: string): Promise<void> {
 		let images = message.images ?? []
 
 		if (mediaUrl) {

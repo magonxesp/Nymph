@@ -35,6 +35,14 @@ export class PrivateChatHistory extends ChatHistory<ChatMessage> {
 		super(chatId, PrivateChatHistory.messageCountLimit)
 	}
 
+	protected override cloneMessage(message: ChatMessage): ChatMessage {
+		return {
+			...message,
+			...(message.images && { images: [...message.images] }),
+			...(message.files && { files: message.files.map((file) => ({ ...file })) })
+		}
+	}
+
 	public addUserMessage(content: string, images?: string[], files?: ChatFile[]) {
 		this.addMessage({
 			role: "user",

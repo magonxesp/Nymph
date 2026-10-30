@@ -2,6 +2,7 @@ import { Api, Context } from "grammy"
 import type { Update, UserFromGetMe } from "grammy/types"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { sendTelegramResponse } from "./response.js"
+import { TelegramMessageSender } from "./message-sender.js"
 import { privateResponseSchema } from "../chat/response.js"
 
 afterEach(() => {
@@ -157,12 +158,12 @@ describe("sendTelegramResponse", () => {
 			botInfo
 		)
 
-		for await (const sent of sendTelegramResponse(ctx, {
+		for await (const sent of TelegramMessageSender.fromContext(ctx).send({
 			text: "Respuesta",
 			media: [{ type: "photo", url: "https://example.com/image.jpg" }],
-			replyToMessageId: 1
+			replyToMessageId: "1"
 		})) {
-			expect(sent.message.chat.id).toBe(-9100)
+			expect(sent.message.senderId).toBe("99")
 		}
 
 		expect(request).toHaveBeenCalledTimes(2)

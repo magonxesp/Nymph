@@ -1,3 +1,4 @@
+import { ChatPlatform } from "../chat/platform.js"
 import { readFile } from "node:fs/promises"
 import { afterAll, describe, expect, it } from "vitest"
 import { ChatId } from "../chat/id.js"
@@ -18,8 +19,8 @@ describe.runIf(process.env.NYMPH_TEST_POSTGRES === "1")("MemoryRepository integr
 					.replace("CREATE TABLE IF NOT EXISTS chat_memories", "CREATE TEMP TABLE chat_memories")
 			)
 			const repository = new MemoryRepository(connection)
-			const chatId = ChatId.forTelegram("123")
-			const otherChatId = ChatId.forTelegram("456")
+			const chatId = new ChatId("123", ChatPlatform.Telegram)
+			const otherChatId = new ChatId("456", ChatPlatform.Telegram)
 			const input = { content: new MemoryContent("Nymph usa TypeScript"), embedding: new Embedding([1, 0, 0]) }
 			const memory = await repository.insert(chatId, input)
 			const [otherMemory] = await repository.insertMany(otherChatId, [input])

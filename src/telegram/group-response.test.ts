@@ -1,3 +1,5 @@
+import { ChatPlatform } from "../chat/platform.js"
+import { UserId } from "../chat/user-id.js"
 /**
  * Nymph
  * Copyright (C) 2026  MagonxESP
@@ -22,7 +24,7 @@ import { prepareGroupReplies } from "./group-response.js"
 
 const history: GroupMessage[] = [
 	{
-		id: 10,
+		id: "10",
 		role: "user",
 		senderId: "123",
 		senderName: "Ana 🦋",
@@ -30,7 +32,7 @@ const history: GroupMessage[] = [
 		timestamp: 1
 	},
 	{
-		id: 11,
+		id: "11",
 		role: "user",
 		senderId: "456",
 		senderName: "Luis",
@@ -48,7 +50,7 @@ describe("prepareGroupReplies", () => {
 					{
 						text: "",
 						media,
-						replyToMessageId: 10,
+						replyToMessageId: "10",
 						mentionUserIds: []
 					}
 				]
@@ -129,7 +131,7 @@ describe("prepareGroupReplies", () => {
 					{
 						media: [],
 						text: "¿Qué opináis?",
-						replyToMessageId: 10,
+						replyToMessageId: "10",
 						mentionUserIds: ["123", "456", "123"]
 					},
 					{
@@ -141,7 +143,7 @@ describe("prepareGroupReplies", () => {
 					{
 						media: [],
 						text: "Y tú, ¿qué dices?",
-						replyToMessageId: 11,
+						replyToMessageId: "11",
 						mentionUserIds: ["456"]
 					}
 				]
@@ -168,8 +170,8 @@ describe("prepareGroupReplies", () => {
 					}
 				],
 				mentions: [
-					{ text: "Ana 🦋", userId: "123" },
-					{ text: "Luis", userId: "456" }
+					{ text: "Ana 🦋", userId: new UserId("123", "Ana 🦋", ChatPlatform.Telegram) },
+					{ text: "Luis", userId: new UserId("456", "Luis", ChatPlatform.Telegram) }
 				],
 				replyToMessageId: 10
 			},
@@ -191,7 +193,7 @@ describe("prepareGroupReplies", () => {
 						url: "tg://user?id=456"
 					}
 				],
-				mentions: [{ text: "Luis", userId: "456" }],
+				mentions: [{ text: "Luis", userId: new UserId("456", "Luis", ChatPlatform.Telegram) }],
 				replyToMessageId: 11
 			}
 		])
@@ -211,7 +213,7 @@ describe("prepareGroupReplies", () => {
 						{
 							media: [],
 							text: "Otra cosa",
-							replyToMessageId: 999,
+							replyToMessageId: "999",
 							mentionUserIds: []
 						}
 					]
@@ -246,7 +248,7 @@ describe("prepareGroupReplies", () => {
 						{
 							media: [],
 							text: "Hola",
-							replyToMessageId: "10",
+							replyToMessageId: 10,
 							mentionUserIds: []
 						}
 					]
@@ -280,7 +282,7 @@ describe("prepareGroupReplies", () => {
 	it("rejects channel IDs even if they occur in the history", () => {
 		const channelHistory: GroupMessage[] = [
 			{
-				id: 12,
+				id: "12",
 				role: "user",
 				senderId: "-100123",
 				senderName: "Canal",
@@ -306,3 +308,19 @@ describe("prepareGroupReplies", () => {
 		).toThrow("unknown group user")
 	})
 })
+
+it.each(["message:alpha", "0", "-1", "1.5", "1e2", "9007199254740993"])(
+	"rejects a domain reference that cannot be sent as a Telegram message ID: %s",
+	(id) => {
+		const invalidHistory: GroupMessage[] = [{ ...history[0], id }]
+
+		expect(() =>
+			prepareGroupReplies(
+				{
+					messages: [{ text: "Hola", media: [], replyToMessageId: id, mentionUserIds: [] }]
+				},
+				invalidHistory
+			)
+		).toThrow("Invalid Telegram reply message ID")
+	}
+)

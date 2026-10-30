@@ -17,6 +17,7 @@
  */
 
 import type { Message, User } from "grammy/types"
+import { toUserId } from "./user-id.js"
 import type { GroupMessage } from "../chat/group.js"
 
 export type GroupMessageContext = {
@@ -87,13 +88,13 @@ export function createGroupMessage(
 				.filter((entity) => entity.type === "mention" || entity.type === "text_mention")
 				.map((entity) => ({
 					text: (text ?? "").slice(entity.offset, entity.offset + entity.length),
-					userId: entity.type === "text_mention" ? String(entity.user.id) : null
+					userId: entity.type === "text_mention" ? toUserId(entity.user) : null
 				}))
 		)
 	}
 
 	return {
-		id: message.message_id,
+		id: String(message.message_id),
 		role,
 		senderId: mapSenderId(),
 		senderName: mapSenderName(),
@@ -101,7 +102,7 @@ export function createGroupMessage(
 		images,
 		files,
 		timestamp: message.date,
-		replyToMessageId: message.reply_to_message?.message_id,
+		replyToMessageId: message.reply_to_message ? String(message.reply_to_message.message_id) : undefined,
 		mentions: mapMentions()
 	}
 }

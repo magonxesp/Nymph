@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { ChatPlatform } from "../chat/platform.js"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { ChatId } from "../chat/id.js"
 import { generateMemories, Memory } from "./memory.js"
@@ -29,7 +30,7 @@ import { getPrivateChatHistory } from "../chat/chat.js"
 
 vi.mock("../logging.js", () => ({ log: { warn: vi.fn() } }))
 
-const chatId = ChatId.forTelegram("123")
+const chatId = new ChatId("123", ChatPlatform.Telegram)
 const history = getPrivateChatHistory(chatId)
 history.addUserMessage("El proyecto se llama Nymph.")
 const snapshot = history.snapshot
@@ -103,7 +104,7 @@ describe("Memory tools", () => {
 
 	it("keeps static tools isolated by each configured chat", async () => {
 		const search = vi.spyOn(MemoryRepository.prototype, "search").mockResolvedValue([])
-		const otherChatId = ChatId.forTelegram("456")
+		const otherChatId = new ChatId("456", ChatPlatform.Telegram)
 		const otherConfig = {
 			configurable: { chat: { id: otherChatId.value, platform: otherChatId.platform, type: "group" } }
 		}
@@ -152,7 +153,7 @@ describe("Memory tools", () => {
 	})
 
 	it("loads the current history only when the tool is invoked", async () => {
-		const source = getPrivateChatHistory(ChatId.forTelegram("tool-live-history"))
+		const source = getPrivateChatHistory(new ChatId("tool-live-history", ChatPlatform.Telegram))
 		source.addUserMessage("Original text")
 		const liveConfig = {
 			configurable: { chat: { id: source.chatId.value, platform: source.chatId.platform, type: "private" } }

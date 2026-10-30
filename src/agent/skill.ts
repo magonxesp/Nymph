@@ -233,7 +233,7 @@ export function parseSkill(skill: string): Skill {
 	return new Skill(document.toJS(), content)
 }
 
-type LoadedSkill = {
+export type LoadedSkill = {
 	name: string
 	path: string
 	description: string

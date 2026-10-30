@@ -5,8 +5,6 @@ description: Busca imágenes y wallpapers de personajes de anime con las tools d
 
 # Imágenes y referencias de personajes de anime
 
-En el chat, carga la skill `task` y encola las búsquedas que requieran booru. Cuando ejecutes la tarea, sigue estas instrucciones directamente.
-
 Usa las tools de booru cuando alguien pida una imagen, foto, ilustración o wallpaper de un personaje de anime, o pregunte cómo es su aspecto, ropa, pelo, ojos u otros rasgos visuales. No sustituyas la búsqueda por una descripción inventada. Para preguntas solo sobre historia, personalidad o relaciones, consulta las fuentes de contexto pertinentes; esta skill se ocupa de referencias visuales.
 
 ## Elegir board y clasificación
