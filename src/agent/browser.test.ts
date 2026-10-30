@@ -61,7 +61,7 @@ describe("browser agent", () => {
 					expect.objectContaining({ name: "browser_navigate" }),
 					expect.objectContaining({ name: "browser_click" })
 				],
-				systemPrompt: expect.stringContaining("browser_research")
+				systemPrompt: expect.stringContaining("# Navegación por internet")
 			})
 		)
 	})

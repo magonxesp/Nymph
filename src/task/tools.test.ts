@@ -7,6 +7,7 @@ import { Task, TaskId } from "./task.js"
 import { getTask, listTasks } from "./tools.js"
 
 vi.mock("../logging.js", () => ({ log: { warn: vi.fn() } }))
+vi.mock("./delegate.js", () => ({ runDelegatedTask: vi.fn() }))
 
 const chatId = new ChatId("123", ChatPlatform.Telegram)
 const id = "4bde8b43-4e8a-4e5b-a058-b5b2de3ef986"
